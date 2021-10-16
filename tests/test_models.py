@@ -12,24 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### -----------------------------------------------------------
-###  Modified by DevOps Course Fall 2021 Squad - Inventory Team
-###  Members:
+# -----------------------------------------------------------
+# Modified by DevOps Course Fall 2021 Squad - Inventory Team
+# Members:
 #      Chen, Peng-Yu | pyc305@nyu.edu | New York | UTC-5
 #      Lai, Yu-Wen   | yl8332@nyu.edu | New York | UTC-5
 #      Zhang, Haoran | hz2613@nyu.edu | New York | UTC-5
 #      Wen, Xuezhou  | xw2447@nyu.edu | New York | UTC-5
 #      Hung, Ginkel  | ch3854@nyu.edu | New York | UTC-5
-# 
-###  Resource URL: /inventory
-###  Description:
+#
+# Resource URL: /inventory
+# Description:
 #      The inventory resource keeps track of how many of each product we
 #      have in our warehouse. At a minimum it should reference a product and the
 #      quantity on hand. Inventory should also track restock levels and the condition
 #      of the item (i.e., new, open box, used). Restock levels will help you know
 #      when to order more products. Being able to query products by their condition
 #      (e.g., new, used) could be very useful.
-### -----------------------------------------------------------
+# -----------------------------------------------------------
 
 """
 Test cases for Inventory Model
@@ -41,9 +41,10 @@ Test cases can be run with:
 While debugging just these tests it's convinient to use this:
     nosetests --stop tests/test_models.py:TestInventoryModel
 """
-import os
 import logging
+import os
 import unittest
+
 # from werkzeug.exceptions import NotFound
 # from service import app
 # from service.models import InventoryModel, DataValidationError, db
@@ -55,6 +56,8 @@ import unittest
 ######################################################################
 #  I N V E N T O R Y   M O D E L   T E S T   C A S E S
 ######################################################################
+
+
 class TestInventoryModel(unittest.TestCase):
     """ Test Cases for Inventory Model """
 

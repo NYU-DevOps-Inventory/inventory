@@ -12,24 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### -----------------------------------------------------------
-###  Modified by DevOps Course Fall 2021 Squad - Inventory Team
-###  Members:
+# -----------------------------------------------------------
+# Modified by DevOps Course Fall 2021 Squad - Inventory Team
+# Members:
 #      Chen, Peng-Yu | pyc305@nyu.edu | New York | UTC-5
 #      Lai, Yu-Wen   | yl8332@nyu.edu | New York | UTC-5
 #      Zhang, Haoran | hz2613@nyu.edu | New York | UTC-5
 #      Wen, Xuezhou  | xw2447@nyu.edu | New York | UTC-5
 #      Hung, Ginkel  | ch3854@nyu.edu | New York | UTC-5
-# 
-###  Resource URL: /inventory
-###  Description:
+#
+# Resource URL: /inventory
+# Description:
 #      The inventory resource keeps track of how many of each product we
 #      have in our warehouse. At a minimum it should reference a product and the
 #      quantity on hand. Inventory should also track restock levels and the condition
 #      of the item (i.e., new, open box, used). Restock levels will help you know
 #      when to order more products. Being able to query products by their condition
 #      (e.g., new, used) could be very useful.
-### -----------------------------------------------------------
+# -----------------------------------------------------------
 
 """
 Inventory API Service Test Suite
@@ -43,8 +43,8 @@ While debugging just these tests it's convinient to use this:
     nosetests --stop tests/test_routes.py:TestInventoryServer
 """
 
-import os
 import logging
+import os
 import unittest
 
 # from unittest.mock import MagicMock, patch
@@ -56,6 +56,8 @@ import unittest
 ######################################################################
 #  T E S T   C A S E S
 ######################################################################
+
+
 class TestInventoryServer(unittest.TestCase):
     """ Inventory API Server Tests """
 
