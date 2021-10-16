@@ -55,7 +55,7 @@ import unittest
 ######################################################################
 #  I N V E N T O R Y   M O D E L   T E S T   C A S E S
 ######################################################################
-class TestYourInventoryModel(unittest.TestCase):
+class TestInventoryModel(unittest.TestCase):
     """ Test Cases for Inventory Model """
 
     @classmethod
