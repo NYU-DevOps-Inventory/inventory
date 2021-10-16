@@ -40,7 +40,7 @@ Test cases can be run with the following:
   codecov --token=$CODECOV_TOKEN
 
 While debugging just these tests it's convinient to use this:
-    nosetests --stop tests/test_service.py:TestPetServer
+    nosetests --stop tests/test_routes.py:TestInventoryServer
 """
 
 import os
