@@ -39,7 +39,7 @@ Test cases can be run with:
     coverage report -m
     
 While debugging just these tests it's convinient to use this:
-    nosetests --stop tests/test_pets.py:TestPetModel
+    nosetests --stop tests/test_models.py:TestInventoryModel
 """
 import os
 import logging
