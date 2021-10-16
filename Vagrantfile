@@ -84,6 +84,9 @@ Vagrant.configure(2) do |config|
     apt-get install -y build-essential
     apt-get -y autoremove
 
+    # Need PostgreSQL development library to compile on arm64
+    apt-get install -y libpq-dev
+    
     # Create a Python 3 virtual environment
     sudo -H -u vagrant sh -c 'python3 -m venv ~/venv'
 
