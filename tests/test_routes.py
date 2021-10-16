@@ -56,7 +56,7 @@ import unittest
 ######################################################################
 #  T E S T   C A S E S
 ######################################################################
-class TestYourResourceServer(unittest.TestCase):
+class TestInventoryServer(unittest.TestCase):
     """ Inventory API Server Tests """
 
     @classmethod
