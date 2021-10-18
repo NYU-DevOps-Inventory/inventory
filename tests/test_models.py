@@ -45,13 +45,13 @@ import logging
 import os
 import unittest
 
-# from werkzeug.exceptions import NotFound
-# from service import app
-# from service.models import InventoryModel, DataValidationError, db
+from werkzeug.exceptions import NotFound
+from service import app
+from service.models import Inventory, Condition, DataValidationError, db
 
-# DATABASE_URI = os.getenv(
-#     "DATABASE_URI", "postgres://postgres:postgres@localhost:[port]/testdb"
-# )
+DATABASE_URI = os.getenv(
+    "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
+)
 
 ######################################################################
 #  I N V E N T O R Y   M O D E L   T E S T   C A S E S
@@ -64,7 +64,11 @@ class TestInventoryModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """ This runs once before the entire test suite """
-        pass
+        app.config["TESTING"] = True
+        app.config["DEBUG"] = False
+        app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
+        app.logger.setLevel(logging.CRITICAL)
+        Inventory.init_db(app)
 
     @classmethod
     def tearDownClass(cls):
@@ -73,16 +77,37 @@ class TestInventoryModel(unittest.TestCase):
 
     def setUp(self):
         """ This runs before each test """
-        pass
+        db.drop_all()  # clean up the last tests
+        db.create_all()  # make our sqlalchemy tables
 
     def tearDown(self):
         """ This runs after each test """
-        pass
+        db.session.remove()
+        db.drop_all()
 
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
 
-    def test_XXXX(self):
-        """ Test something """
-        self.assertTrue(True)
+    def test_create_an_inventory(self):
+        """ Create an inventory and assert that it exists """
+        inventory = Inventory(
+            product_id=1, condition=Condition.NEW, quantity=2, restock_level=3)
+        self.assertTrue(inventory != None)
+        self.assertEqual(inventory.product_id, 1)
+        self.assertEqual(inventory.condition, Condition.NEW)
+        self.assertEqual(inventory.quantity, 2)
+        self.assertEqual(inventory.restock_level, 3)
+
+    def test_add_an_inventory(self):
+        """ Create an inventory and add it to the database """
+        inventories = Inventory.all()
+        self.assertEqual(inventories, [])
+        inventory = Inventory(
+            product_id=1, condition=Condition.NEW, quantity=2, restock_level=3)
+        self.assertTrue(inventory != None)
+        self.assertEqual(inventory.product_id, 1)
+        inventory.create()
+        # Asert that it shows up in the database
+        inventories = Inventory.all()
+        self.assertEqual(len(inventories), 1)
