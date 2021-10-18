@@ -46,18 +46,19 @@ While debugging just these tests it's convinient to use this:
 import logging
 import os
 import unittest
-
 from urllib.parse import quote_plus
+
 from service import status  # HTTP Status Codes
 from service.models import db
 from service.routes import app, init_db
+
 from .factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
 )
 
-BASE_URL = "/inventories"
+BASE_URL = "/inventory"
 
 ######################################################################
 #  T E S T   C A S E S
@@ -130,14 +131,14 @@ class TestInventoryServer(unittest.TestCase):
         inventory = InventoryFactory()
         logging.debug(inventory)
         # change condition to a bad string
-        test_pet = inventory.serialize()
-        test_pet["condition"] = "new"    # wrong case
+        test_inventory = inventory.serialize()
+        test_inventory["condition"] = "new"    # wrong case
         resp = self.app.post(
-            BASE_URL, json=test_pet, content_type="application/json"
+            BASE_URL, json=test_inventory, content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_pet_no_content_type(self):
+    def test_create_inventory_no_content_type(self):
         """ Create a Inventory with no content type """
         resp = self.app.post(BASE_URL)
         self.assertEqual(resp.status_code,

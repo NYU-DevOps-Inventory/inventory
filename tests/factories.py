@@ -17,11 +17,11 @@ Test Factory to make fake objects for testing
 """
 import factory
 from factory.fuzzy import FuzzyChoice
-from service.models import Inventory, Condition
+from service.models import Condition, Inventory
 
 
 class InventoryFactory(factory.Factory):
-    """ Creates fake pets that you don't have to feed """
+    """ Create fake inventory that you don't have to feed """
 
     class Meta:
         model = Inventory

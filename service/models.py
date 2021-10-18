@@ -15,6 +15,7 @@ Attributes:
 
 import logging
 from enum import Enum
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
@@ -88,7 +89,7 @@ class Inventory(db.Model):
 
     @classmethod
     def init_db(cls, app: Flask):
-        """ Initializes the database session """
+        """ Initialize the database session """
         logger.info("Initializing database")
         cls.app = app
         # This is where we initialize SQLAlchemy from the Flask app
@@ -98,6 +99,6 @@ class Inventory(db.Model):
 
     @classmethod
     def all(cls) -> list:
-        """ Returns all of the Inventories in the database """
+        """ Return all of the Inventories in the database """
         logger.info("Processing all Inventories")
         return cls.query.all()

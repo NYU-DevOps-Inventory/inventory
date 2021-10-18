@@ -32,19 +32,20 @@ DELETE /inventory/{int:product_id}/condition/{enum:condition}
     - Deletes the Inventory with the given product_id and condition
 """
 
+import logging
 import os
 import sys
-import logging
-from flask import Flask, jsonify, request, url_for, make_response, abort
-from . import status  # HTTP Status Codes
-from werkzeug.exceptions import NotFound
 
+from flask import Flask, abort, jsonify, make_response, request, url_for
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
 # variety of backends including SQLite, MySQL, and PostgreSQL
 from flask_sqlalchemy import SQLAlchemy
-from service.models import Inventory, DataValidationError
+from werkzeug.exceptions import NotFound
+
+from service.models import DataValidationError, Inventory
 
 from . import app  # Import Flask application
+from . import status  # HTTP Status Codes
 
 
 @app.route("/")
@@ -55,8 +56,8 @@ def index():
 ######################################################################
 # ADD A NEW INVENTORY
 ######################################################################
-@app.route("/inventories", methods=["POST"])
-def create_inventories():
+@app.route("/inventory", methods=["POST"])
+def create_inventory():
     """
     Create an inventory
     This endpoint will create an inventory based the data in the body that is posted
@@ -68,20 +69,20 @@ def create_inventories():
     inventory.create()
     message = inventory.serialize()
     location_url = url_for(
-        "create_inventories", product_id=inventory.product_id, _external=True)
+        "create_inventory", product_id=inventory.product_id, _external=True)
     return make_response(
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
 
 
 def init_db():
-    """ Initialies the SQLAlchemy app """
+    """ Initialize the SQLAlchemy app """
     global app
     Inventory.init_db(app)
 
 
 def check_content_type(content_type):
-    """ Checks that the media type is correct """
+    """ Check that the media type is correct """
     if "Content-Type" in request.headers and request.headers["Content-Type"] == content_type:
         return
     app.logger.error(

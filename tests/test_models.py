@@ -45,9 +45,9 @@ import logging
 import os
 import unittest
 
-from werkzeug.exceptions import NotFound
 from service import app
-from service.models import Inventory, Condition, DataValidationError, db
+from service.models import Condition, DataValidationError, Inventory, db
+from werkzeug.exceptions import NotFound
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
@@ -108,6 +108,6 @@ class TestInventoryModel(unittest.TestCase):
         self.assertTrue(inventory != None)
         self.assertEqual(inventory.product_id, 1)
         inventory.create()
-        # Asert that it shows up in the database
+        # Assert that it shows up in the database
         inventories = Inventory.all()
         self.assertEqual(len(inventories), 1)

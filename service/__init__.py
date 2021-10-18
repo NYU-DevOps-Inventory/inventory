@@ -19,8 +19,9 @@ This module creates and configures the Flask app and sets up the logging
 and SQL database
 """
 import logging
-import sys
 import os
+import sys
+
 from flask import Flask
 
 # Create Flask application
@@ -28,7 +29,7 @@ app = Flask(__name__)
 app.config.from_object("config")
 
 # Import the rutes After the Flask app is created
-from service import routes, models, error_handlers
+from service import error_handlers, models, routes
 
 # Set up logging for production
 print(f"Setting log level to {logging.INFO}")
@@ -43,7 +44,8 @@ for handler in app.logger.handlers:
 app.logger.info("Logging handler established")
 
 app.logger.info(70 * "*")
-app.logger.info("  I N V E N T O R Y   S E R V I C E   R U N N I N G  ".center(70, "*"))
+app.logger.info(
+    "  I N V E N T O R Y   S E R V I C E   R U N N I N G  ".center(70, "*"))
 app.logger.info(70 * "*")
 
 try:
