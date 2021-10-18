@@ -52,6 +52,7 @@ app.logger.info(70 * "*")
 try:
     # routes.init_db()  # make our sqlalchemy tables
     # This is where we initialize SQLAlchemy from the Flask app
+    logger.info("Initializing database")
     db.init_app(app)
     app.app_context().push()
     db.create_all()  # make our sqlalchemy tables
