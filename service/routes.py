@@ -19,17 +19,17 @@ Paths:
 ------
 GET /inventory
     - Returns a list all of the Inventory
-GET /inventory/{product_id}
-    - Returns the Inventory with a given product_id
+GET /inventory/{int:product_id}/condition/{enum:condition}
+    - Returns the Inventory with the given product_id and condition
 
 POST /inventory
     - Creates a new Inventory record in the database
 
-PUT /inventory/{product_id}
-    - Updates a Inventory record in the database
+PUT /inventory/{int:product_id}/condition/{enum:condition}
+    - Updates the Inventory with the given product_id and condition
 
-DELETE /inventory/{product_id}
-    - Deletes a Inventory record in the database
+DELETE /inventory/{int:product_id}/condition/{enum:condition}
+    - Deletes the Inventory with the given product_id and condition
 """
 
 from . import app  # Import Flask application
