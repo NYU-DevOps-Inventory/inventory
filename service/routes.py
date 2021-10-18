@@ -55,8 +55,8 @@ def index():
 ######################################################################
 # ADD A NEW INVENTORY
 ######################################################################
-@app.route("/inventories", methods=["POST"])
-def create_inventories():
+@app.route("/inventoy", methods=["POST"])
+def create_inventory():
     """
     Create an inventory
     This endpoint will create an inventory based the data in the body that is posted
@@ -68,7 +68,7 @@ def create_inventories():
     inventory.create()
     message = inventory.serialize()
     location_url = url_for(
-        "create_inventories", product_id=inventory.product_id, _external=True)
+        "create_inventory", product_id=inventory.product_id, _external=True)
     return make_response(
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )

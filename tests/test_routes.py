@@ -57,7 +57,7 @@ DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
 )
 
-BASE_URL = "/inventories"
+BASE_URL = "/inventory"
 
 ######################################################################
 #  T E S T   C A S E S

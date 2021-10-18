@@ -21,7 +21,7 @@ from service.models import Inventory, Condition
 
 
 class InventoryFactory(factory.Factory):
-    """ Creates fake pets that you don't have to feed """
+    """ Creates a fake inventory that you don't have to feed """
 
     class Meta:
         model = Inventory
