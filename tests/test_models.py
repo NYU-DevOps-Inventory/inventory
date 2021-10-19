@@ -49,6 +49,8 @@ from service import app
 from service.models import Condition, DataValidationError, Inventory, db
 from werkzeug.exceptions import NotFound
 
+from tests.factories import InventoryFactory
+
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
 )
@@ -112,7 +114,15 @@ class TestInventoryModel(unittest.TestCase):
         inventories = Inventory.all()
         self.assertEqual(len(inventories), 1)
 
-    ######################################################################
+    def test_delete_an_inventory(self):
+        """ Delete an inventory """
+        inventory = InventoryFactory()
+        inventory.create()
+        self.assertEqual(len(Inventory.all()), 1)
+        # delete the pet and make sure it isn't in the database
+        inventory.delete()
+        self.assertEqual(len(Inventory.all()), 0)
+
     def test_find_by_pid_condition(self):
         """ Find an Inventory by [product_id] and [condition] """
         inventory = Inventory(

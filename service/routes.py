@@ -42,7 +42,7 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import NotFound
 
-from service.models import DataValidationError, Inventory
+from service.models import Condition, DataValidationError, Inventory
 
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
@@ -124,6 +124,26 @@ def get_inventory_by_condition(condition):
 
     results = [inventory.serialize() for inventory in inventories]
     return make_response(jsonify(results), status.HTTP_200_OK)
+# DELETE A INVENTORY
+######################################################################
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["DELETE"])
+def delete_inventory(product_id, condition):
+    """
+    Delete a Inventory
+    This endpoint will delete an inventory based the product_id and condition specified in the path
+    """
+    app.logger.info(
+        "Request to delete inventory of which product_id: %s and condition %s", product_id, condition)
+    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    if inventory:
+        inventory.delete()
+    return make_response("", status.HTTP_204_NO_CONTENT)
+
+######################################################################
+#  U T I L I T Y   F U N C T I O N S
+######################################################################
 
 
 def init_db():

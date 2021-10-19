@@ -91,6 +91,22 @@ class TestInventoryServer(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
+    def _create_inventories(self, count):
+        """ Factory method to create pets in bulk """
+        inventories = []
+        for _ in range(count):
+            test_inventory = InventoryFactory()
+            resp = self.app.post(
+                BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+            )
+            self.assertEqual(
+                resp.status_code, status.HTTP_201_CREATED, "Could not create test inventory"
+            )
+            new_inventory = resp.get_json()
+            test_inventory.product_id = new_inventory["product_id"]
+            inventories.append(test_inventory)
+        return inventories
+
     ######################################################################
     #  P L A C E   T E S T   C A S E S   H E R E
     ######################################################################
@@ -117,6 +133,7 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing POST
+
     def test_create_inventory(self):
         """ Create a new inventory """
         test_inventory = InventoryFactory()
@@ -226,10 +243,23 @@ class TestInventoryServer(unittest.TestCase):
         condition = test_inventory.condition.name
         resp = self.app.get("{0}/{1}/condition/{2}".format(BASE_URL,
                                                            pid, condition), content_type="application/json")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(data["product_id"], pid)
         self.assertEqual(data["condition"], condition)
+
+    def test_delete_inventory(self):
+        """ Delete an inventory """
+        test_invenotory = self._create_inventories(1)[0]
+        resp = self.app.delete(
+            "{0}/{1}/condition/{2}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(resp.data), 0)
+        # # make sure they are deleted
+        # resp = self.app.get(
+        #     "{}/{}".format(BASE_URL, test_invenotory.product_id), content_type="application/json"
+        # )
+        # self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_by_pid_condition_not_found(self):
         """ Get an Inventory by [product_id, condition] that not found """
