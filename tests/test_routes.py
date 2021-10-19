@@ -95,7 +95,7 @@ class TestInventoryServer(unittest.TestCase):
     #  P L A C E   T E S T   C A S E S   H E R E
     ######################################################################
     def _create_inventories(self, count):
-        """ Factory method to create pets in bulk """
+        """ Factory method to create inventories in bulk """
         inventories = []
         for _ in range(count):
             test_inventory = InventoryFactory()
