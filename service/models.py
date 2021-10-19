@@ -16,8 +16,8 @@ Attributes:
 import logging
 from enum import Enum
 
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.sql import func
 
 db = SQLAlchemy()
 
@@ -45,31 +45,35 @@ class Inventory(db.Model):
     restock_level = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
-        return "<Inventory id=[%s]>" % self.id
+        return "<Inventory product_id=[%s] with condition=[%s] condition>" % self.product_id, self.condition
 
-    def __init__(self, product_id: int, condition: Condition):
-        self.product_id = product_id
-        self.condition = condition
+    def create(self):
+        """
+        Create an Inventory to the database
+        """
+        logger.info("Creating %s", self.product_id)
+        db.session.add(self)
+        db.session.commit()
 
     def serialize(self):
-        """ Serializes an Inventory into a dictionary """
+        """ Serialize an Inventory into a dictionary """
         return {
             "product_id": self.product_id,
-            "condition": self.condition,
+            "condition": self.condition.name,
             "quantity": self.quantity,
             "restock_level": self.restock_level,
         }
 
     def deserialize(self, data):
         """
-        Deserializes an Inventory from a dictionary
+        Deserialize an Inventory from a dictionary
 
         Args:
             data (dict): A dictionary containing the resource data
         """
         try:
             self.product_id = data["product_id"]
-            self.condition = data["condition"]
+            self.condition = getattr(Condition, data["condition"])
             self.quantity = data["quantity"]
             self.restock_level = data["restock_level"]
         except AttributeError as error:
@@ -82,3 +86,19 @@ class Inventory(db.Model):
                 "Invalid inventory: body of request contained bad or no data"
             )
         return self
+
+    @classmethod
+    def init_db(cls, app: Flask):
+        """ Initialize the database session """
+        logger.info("Initializing database")
+        cls.app = app
+        # This is where we initialize SQLAlchemy from the Flask app
+        db.init_app(app)
+        app.app_context().push()
+        db.create_all()  # make our sqlalchemy tables
+
+    @classmethod
+    def all(cls) -> list:
+        """ Return all of the Inventories in the database """
+        logger.info("Processing all Inventories")
+        return cls.query.all()

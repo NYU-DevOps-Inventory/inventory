@@ -32,12 +32,60 @@ DELETE /inventory/{int:product_id}/condition/{enum:condition}
     - Deletes the Inventory with the given product_id and condition
 """
 
-from . import app  # Import Flask application
+import logging
+import os
+import sys
 
+from flask import Flask, abort, jsonify, make_response, request, url_for
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
 # variety of backends including SQLite, MySQL, and PostgreSQL
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.exceptions import NotFound
+
+from service.models import DataValidationError, Inventory
+
+from . import app  # Import Flask application
+from . import status  # HTTP Status Codes
 
 
 @app.route("/")
 def index():
     return "Hello, World!"
+
+
+######################################################################
+# ADD A NEW INVENTORY
+######################################################################
+@app.route("/inventory", methods=["POST"])
+def create_inventory():
+    """
+    Create an inventory
+    This endpoint will create an inventory based the data in the body that is posted
+    """
+    app.logger.info("Request to create an inventory")
+    check_content_type("application/json")
+    inventory = Inventory()
+    inventory.deserialize(request.get_json())
+    inventory.create()
+    message = inventory.serialize()
+    location_url = url_for(
+        "create_inventory", product_id=inventory.product_id, _external=True)
+    return make_response(
+        jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
+    )
+
+
+def init_db():
+    """ Initialize the SQLAlchemy app """
+    global app
+    Inventory.init_db(app)
+
+
+def check_content_type(content_type):
+    """ Check that the media type is correct """
+    if "Content-Type" in request.headers and request.headers["Content-Type"] == content_type:
+        return
+    app.logger.error(
+        "Invalid Content-Type: [%s]", request.headers.get("Content-Type"))
+    abort(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+          "Content-Type must be {}".format(content_type))

@@ -19,6 +19,7 @@ This module creates and configures the Flask app and sets up the logging
 and SQL database
 """
 import logging
+import os
 import sys
 
 from flask import Flask
@@ -27,35 +28,28 @@ from flask import Flask
 app = Flask(__name__)
 app.config.from_object("config")
 
-# Import the routes After the Flask app is created
-from service import models, routes
-from service.models import db
+# Import the rutes After the Flask app is created
+from service import error_handlers, models, routes
 
 # Set up logging for production
-if __name__ != "__main__":
-    gunicorn_logger = logging.getLogger("gunicorn.error")
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
-    app.logger.propagate = False
-    # Make all log formats consistent
-    formatter = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s", "%Y-%m-%d %H:%M:%S %z"
-    )
-    for handler in app.logger.handlers:
-        handler.setFormatter(formatter)
-    app.logger.info("Logging handler established")
+print(f"Setting log level to {logging.INFO}")
+app.logger.setLevel(logging.INFO)
+app.logger.propagate = False
+# Make all log formats consistent
+formatter = logging.Formatter(
+    "[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s", "%Y-%m-%d %H:%M:%S %z"
+)
+for handler in app.logger.handlers:
+    handler.setFormatter(formatter)
+app.logger.info("Logging handler established")
 
 app.logger.info(70 * "*")
-app.logger.info("  M Y   S E R V I C E   R U N N I N G  ".center(70, "*"))
+app.logger.info(
+    "  I N V E N T O R Y   S E R V I C E   R U N N I N G  ".center(70, "*"))
 app.logger.info(70 * "*")
 
 try:
-    # routes.init_db()  # make our sqlalchemy tables
-    # This is where we initialize SQLAlchemy from the Flask app
-    app.logger.info("Initializing database")
-    db.init_app(app)
-    app.app_context().push()
-    db.create_all()  # make our sqlalchemy tables
+    routes.init_db()  # make our sqlalchemy tables
 except Exception as error:
     app.logger.critical("%s: Cannot continue", error)
     # gunicorn requires exit code 4 to stop spawning workers when they die
