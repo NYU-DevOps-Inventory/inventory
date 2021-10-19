@@ -18,18 +18,18 @@ Inventory Store Service
 Paths:
 ------
 GET /inventory
-    - Returns a list all of the Inventory
-GET /inventory/{int:product_id}/condition/{enum:condition}
-    - Returns the Inventory with the given product_id and condition
+    - Return a list all of the Inventory
+GET /inventory/{int:product_id}/condition/{string:condition}
+    - Return the Inventory with the given product_id and condition
 
 POST /inventory
-    - Creates a new Inventory record in the database
+    - Create a new Inventory record in the database
 
-PUT /inventory/{int:product_id}/condition/{enum:condition}
-    - Updates the Inventory with the given product_id and condition
+PUT /inventory/{int:product_id}/condition/{string:condition}
+    - Update the Inventory with the given product_id and condition
 
-DELETE /inventory/{int:product_id}/condition/{enum:condition}
-    - Deletes the Inventory with the given product_id and condition
+DELETE /inventory/{int:product_id}/condition/{string:condition}
+    - Delete the Inventory with the given product_id and condition
 """
 
 import logging
@@ -42,7 +42,7 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import NotFound
 
-from service.models import Condition, DataValidationError, Inventory
+from service.models import DataValidationError, Inventory
 
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
@@ -54,7 +54,7 @@ def index():
 
 
 ######################################################################
-# ADD A NEW INVENTORY
+# POST: ADD A NEW INVENTORY
 ######################################################################
 @app.route("/inventory", methods=["POST"])
 def create_inventory():
@@ -69,20 +69,73 @@ def create_inventory():
     inventory.create()
     message = inventory.serialize()
     location_url = url_for(
-        "create_inventory", product_id=inventory.product_id, _external=True)
+        "get_inventory_by_pid_condition", product_id=inventory.product_id, condition=inventory.condition.name, _external=True)
+    app.logger.info("Inventory ({}, {}) created."
+                    .format(inventory.product_id, inventory.condition))
     return make_response(
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
 
 ######################################################################
-# UPDATE IN THE INVENTORY
+# GET: RETRIEVE INVENTORY
+######################################################################
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["GET"])
+def get_inventory_by_pid_condition(product_id, condition):
+    """ Retrieve inventory by the given product_id and condition """
+    app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
+        product_id, condition))
+    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    if not inventory:
+        return NotFound("Inventory with product_id '{}' and condition '{}' was not found.)".format(product_id, condition))
+    app.logger.info("Return inventory with product_id {} and condition {}".format(
+        product_id, condition))
+    return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+
+@app.route("/inventory/<int:product_id>", methods=["GET"])
+def get_inventory_by_pid(product_id):
+    """
+    Retrieve Inventory by product_id
+
+    This endpoint will return Inventory based on product's id
+    """
+    app.logger.info("Request for inventory with product_id: %s", product_id)
+    inventories = Inventory.find_by_pid(product_id)
+    if not inventories:
+        raise NotFound(
+            "Inventory with product_id '{}' was not found.".format(product_id))
+
+    results = [inventory.serialize() for inventory in inventories]
+    return make_response(jsonify(results), status.HTTP_200_OK)
+
+
+@app.route("/inventory/condition/<string:condition>", methods=["GET"])
+def get_inventory_by_condition(condition):
+    """
+    Retrieve Inventory by condition
+
+    This endpoint will return Inventory based on product's condition
+    """
+    app.logger.info("Request for inventory with condition: %s", condition)
+    inventories = Inventory.find_by_condition(condition)
+    if not inventories:
+        raise NotFound(
+            "Inventory with condition '{}' was not found.".format(condition))
+
+    results = [inventory.serialize() for inventory in inventories]
+    return make_response(jsonify(results), status.HTTP_200_OK)
+
+######################################################################
+# PUT: UPDATE IN THE INVENTORY
 ######################################################################
 @app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["PUT"])
 def update_inventory(product_id, condition):
     """Update the inventory"""
     app.logger.info("Request to update the inventory \
         with product_id {} and condition {}".format(product_id, condition))
-    inventory = Inventory.find(product_id, condition)
+    inventory = Inventory.find_by_pid_condition(product_id, condition)
     if not inventory:
         raise NotFound("Inventory with product '{}' of condition '{}' \
             was not found".format(product_id, condition))
@@ -93,6 +146,35 @@ def update_inventory(product_id, condition):
 
     app.logger.info("Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+def init_db():
+    """ Initialize the SQLAlchemy app """
+    global app
+    Inventory.init_db(app)
+
+
+######################################################################
+# DELETE A INVENTORY
+######################################################################
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["DELETE"])
+def delete_inventory(product_id, condition):
+    """
+    Delete a Inventory
+    This endpoint will delete an inventory based the product_id and condition specified in the path
+    """
+    app.logger.info(
+        "Request to delete inventory of which product_id: %s and condition %s", product_id, condition)
+    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    if inventory:
+        inventory.delete()
+    return make_response("", status.HTTP_204_NO_CONTENT)
+
+######################################################################
+#  U T I L I T Y   F U N C T I O N S
+######################################################################
+
 
 def init_db():
     """ Initialize the SQLAlchemy app """
