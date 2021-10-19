@@ -100,7 +100,7 @@ class TestInventoryModel(unittest.TestCase):
         self.assertEqual(inventory.condition, Condition.NEW)
         self.assertEqual(inventory.quantity, 2)
         self.assertEqual(inventory.restock_level, 3)
-    
+
     def test_update_inventory(self):
         """ Update an existing record in inventory """
         inventory = Inventory(product_id=1, condition=Condition.NEW, quantity=100, restock_level=40)
