@@ -37,7 +37,7 @@ Test cases for Inventory Model
 Test cases can be run with:
     nosetests
     coverage report -m
-    
+
 While debugging just these tests it's convinient to use this:
     nosetests --stop tests/test_models.py:TestInventoryModel
 """
@@ -48,6 +48,8 @@ import unittest
 from service import app
 from service.models import Condition, DataValidationError, Inventory, db
 from werkzeug.exceptions import NotFound
+
+from tests.factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
@@ -88,10 +90,6 @@ class TestInventoryModel(unittest.TestCase):
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
-    def test_repr(self):
-        inventory = Inventory(
-            product_id=1, condition=Condition.NEW, quantity=2, restock_level=3)
-        self.assertEqual(inventory.__repr__(), "<Inventory product_id=[1] with condition=[Condition.NEW] condition>")
 
     def test_create_an_inventory(self):
         """ Create an inventory and assert that it exists """
@@ -102,6 +100,23 @@ class TestInventoryModel(unittest.TestCase):
         self.assertEqual(inventory.condition, Condition.NEW)
         self.assertEqual(inventory.quantity, 2)
         self.assertEqual(inventory.restock_level, 3)
+    
+    def test_update_inventory(self):
+        """ Update an existing record in inventory """
+        inventory = Inventory(product_id=1, condition=Condition.NEW, quantity=100, restock_level=40)
+        inventory.create()
+        orininal_product_id = inventory.product_id
+        original_condition = inventory.condition
+        inventory.quantity = 70
+        inventory.restock_level = 50
+        inventory.update()
+        latest_inventory = Inventory.all()
+        self.assertEqual(len(latest_inventory), 1)
+        self.assertEqual(latest_inventory[0].product_id, orininal_product_id)
+        self.assertEqual(latest_inventory[0].condition, original_condition)
+        self.assertEqual(latest_inventory[0].quantity, 70)
+        self.assertEqual(latest_inventory[0].restock_level, 50)
+
 
     def test_add_an_inventory(self):
         """ Create an inventory and add it to the database """
@@ -116,20 +131,51 @@ class TestInventoryModel(unittest.TestCase):
         inventories = Inventory.all()
         self.assertEqual(len(inventories), 1)
 
-    def test_update_inventory(self):
-        """ Update an existing record in inventory"""
-        inventory = Inventory(product_id=1, condition=Condition.NEW, quantity=100, restock_level=40)
+    def test_delete_an_inventory(self):
+        """ Delete an inventory """
+        inventory = InventoryFactory()
         inventory.create()
-        orininal_product_id = inventory.product_id
-        original_condition = inventory.condition
-        inventory.quantity = 70
-        inventory.restock_level = 50
-        inventory.update()
-        
-        latest_inventory = Inventory.all()
+        self.assertEqual(len(Inventory.all()), 1)
+        # delete the pet and make sure it isn't in the database
+        inventory.delete()
+        self.assertEqual(len(Inventory.all()), 0)
 
-        self.assertEqual(len(latest_inventory), 1)
-        self.assertEqual(latest_inventory[0].product_id, orininal_product_id)
-        self.assertEqual(latest_inventory[0].condition, original_condition)
-        self.assertEqual(latest_inventory[0].quantity, 70)
-        self.assertEqual(latest_inventory[0].restock_level, 50)
+    def test_find_by_pid_condition(self):
+        """ Find an Inventory by [product_id] and [condition] """
+        inventory = Inventory(
+            product_id=123, condition=Condition.NEW, quantity=2, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        result = Inventory.find_by_pid_condition(
+            inventory.product_id, inventory.condition)
+        self.assertIsNot(result, None)
+        self.assertEqual(result.product_id, inventory.product_id)
+        self.assertEqual(result.condition, inventory.condition)
+        self.assertEqual(result.quantity, inventory.quantity)
+        self.assertEqual(result.restock_level, inventory.restock_level)
+
+    def test_find_by_pid(self):
+        """ Find Inventory by [product_id] """
+        inventory = Inventory(
+            product_id=124, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=124, condition=Condition.USED, quantity=4)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_pid(inventory.product_id)
+        self.assertEqual(len(list(inventories)), 2)
+
+    def test_find_by_condition(self):
+        """ Find an Inventory by [condition] """
+        inventory = Inventory(
+            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_condition(inventory.condition)
+        self.assertEqual(len(list(inventories)), 2)

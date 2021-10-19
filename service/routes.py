@@ -143,7 +143,6 @@ def update_inventory(product_id, condition):
     inventory.product_id = product_id
     inventory.condition = condition
     inventory.update()
-
     app.logger.info("Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
 
