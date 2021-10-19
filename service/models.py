@@ -45,7 +45,7 @@ class Inventory(db.Model):
     restock_level = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
-        return "<Inventory product_id=[%s] with condition=[%s] condition>" % (self.product_id, self.condition)
+        return "<Inventory product_id=[%s] with condition=[%s] condition>" % self.product_id, self.condition
 
     def create(self):
         """
@@ -62,6 +62,15 @@ class Inventory(db.Model):
         logger.info("Saving product %s with condition %s", self.product_id, self.condition)
         if not self.product_id or not self.condition:
             raise DataValidationError("Update called with empty product ID or condition")
+        db.session.commit()
+
+    def delete(self):
+        """
+        Remove an Inventory from the database
+        """
+        logger.info("Deleting %s with %s condition",
+                    self.product_id, self.condition.name)
+        db.session.delete(self)
         db.session.commit()
 
     def serialize(self):
@@ -113,7 +122,20 @@ class Inventory(db.Model):
         return cls.query.all()
 
     @classmethod
-    def find(cls, product_id: int, condition: Condition):
-        """Find in the Inventory by product id and condition"""
-        logger.info("Processing lookup for product %s of condition %s", product_id, condition)
-        return cls.query.get((product_id, condition))
+    def find_by_pid(cls, product_id: int):
+        """ Finds Inventory by product ID """
+        logger.info("Processing lookup for id %s ...", product_id)
+        return cls.query.filter(cls.product_id == product_id).all()
+
+    @classmethod
+    def find_by_condition(cls, condition):
+        """ Returns Inventory by condition """
+        logger.info("Processing lookup for condition %s ...", condition)
+        return cls.query.filter(cls.condition == condition).all()
+
+    @classmethod
+    def find_by_pid_condition(cls, pid, condition):
+        """ Finds an Inventory record by product_id and condition """
+        logger.info(
+            "Processing lookup for product_id %s and condition %s ...", pid, condition)
+        return cls.query.get((pid, condition))
