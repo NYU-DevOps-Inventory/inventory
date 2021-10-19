@@ -18,18 +18,18 @@ Inventory Store Service
 Paths:
 ------
 GET /inventory
-    - Returns a list all of the Inventory
+    - Return a list all of the Inventory
 GET /inventory/{int:product_id}/condition/{string:condition}
-    - Returns the Inventory with the given product_id and condition
+    - Return the Inventory with the given product_id and condition
 
 POST /inventory
-    - Creates a new Inventory record in the database
+    - Create a new Inventory record in the database
 
 PUT /inventory/{int:product_id}/condition/{string:condition}
-    - Updates the Inventory with the given product_id and condition
+    - Update the Inventory with the given product_id and condition
 
 DELETE /inventory/{int:product_id}/condition/{string:condition}
-    - Deletes the Inventory with the given product_id and condition
+    - Delete the Inventory with the given product_id and condition
 """
 
 import logging
@@ -69,7 +69,9 @@ def create_inventory():
     inventory.create()
     message = inventory.serialize()
     location_url = url_for(
-        "create_inventory", product_id=inventory.product_id, _external=True)
+        "get_inventory_by_pid_condition", product_id=inventory.product_id, condition=inventory.condition.name, _external=True)
+    app.logger.info("Inventory ({}, {}) created."
+                    .format(inventory.product_id, inventory.condition))
     return make_response(
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
@@ -124,6 +126,8 @@ def get_inventory_by_condition(condition):
 
     results = [inventory.serialize() for inventory in inventories]
     return make_response(jsonify(results), status.HTTP_200_OK)
+
+######################################################################
 # DELETE A INVENTORY
 ######################################################################
 

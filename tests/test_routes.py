@@ -91,22 +91,6 @@ class TestInventoryServer(unittest.TestCase):
         db.session.remove()
         db.drop_all()
 
-    def _create_inventories(self, count):
-        """ Factory method to create pets in bulk """
-        inventories = []
-        for _ in range(count):
-            test_inventory = InventoryFactory()
-            resp = self.app.post(
-                BASE_URL, json=test_inventory.serialize(), content_type="application/json"
-            )
-            self.assertEqual(
-                resp.status_code, status.HTTP_201_CREATED, "Could not create test inventory"
-            )
-            new_inventory = resp.get_json()
-            test_inventory.product_id = new_inventory["product_id"]
-            inventories.append(test_inventory)
-        return inventories
-
     ######################################################################
     #  P L A C E   T E S T   C A S E S   H E R E
     ######################################################################
@@ -157,7 +141,21 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(
             new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
         )
-        # TODO: After implementing "GET" method, check that the location header was correct.
+        # Check that the location header was correct
+        resp = self.app.get(location, content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        new_inventory = resp.get_json()
+        self.assertEqual(
+            new_inventory["product_id"], test_inventory.product_id, "Product_id do not match")
+        self.assertEqual(
+            new_inventory["condition"], test_inventory.condition.name, "Condition do not match"
+        )
+        self.assertEqual(
+            new_inventory["quantity"], test_inventory.quantity, "Quantity does not match"
+        )
+        self.assertEqual(
+            new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
+        )
 
     def test_create_inventory_no_data(self):
         """ Create an inventory with missing data """
