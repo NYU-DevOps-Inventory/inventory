@@ -40,7 +40,7 @@ Test cases can be run with the following:
   codecov --token=$CODECOV_TOKEN
 
 While debugging just these tests it's convinient to use this:
-    nosetests --stop tests/test_routes.py:TestInventoryServer
+  nosetests --stop tests/test_routes.py:TestInventoryServer
 """
 
 import logging
@@ -109,11 +109,6 @@ class TestInventoryServer(unittest.TestCase):
             test_inventory.product_id = new_inventory["product_id"]
             inventories.append(test_inventory)
         return inventories
-
-    def test_index(self):
-        """ Test index call """
-        resp = self.app.get("/")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
     ######################################################################
     # Testing POST
@@ -184,6 +179,22 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing GET
+    def test_index(self):
+        """ Test the Home Page """
+        resp = self.app.get("/")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], "Inventory REST API Service")
+
+    def test_get_inventory_list(self):
+        """ Get a list of Inventory """
+        count = 5
+        self._create_inventories(count)
+        resp = self.app.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), count)
+
     def test_get_inventory_by_pid(self):
         """ Get Inventory by [product_id] """
         N = 5
@@ -274,19 +285,6 @@ class TestInventoryServer(unittest.TestCase):
         # update a record
         inventory = InventoryFactory()
         test_inventory = inventory.serialize()
-        resp = self.app.put(
-            "/inventory/{}/condition/{}".format(test_inventory["product_id"],test_inventory["condition"]),
-            json=test_inventory,
-            content_type="application/json",
-        )
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_update_bad_inventory(self):
-        """Update a record with invalid product id in Inventory"""
-        # update a record
-        inventory = InventoryFactory()
-        test_inventory = inventory.serialize()
-        test_inventory["product_id"] = -1  # wrong test 
         resp = self.app.put(
             "/inventory/{}/condition/{}".format(test_inventory["product_id"],test_inventory["condition"]),
             json=test_inventory,
