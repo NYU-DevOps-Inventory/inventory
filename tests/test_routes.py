@@ -49,7 +49,7 @@ import unittest
 from urllib.parse import quote_plus
 
 from service import status  # HTTP Status Codes
-from service.models import db
+from service.models import Condition, db
 from service.routes import app, init_db
 
 from .factories import InventoryFactory
@@ -94,6 +94,29 @@ class TestInventoryServer(unittest.TestCase):
     ######################################################################
     #  P L A C E   T E S T   C A S E S   H E R E
     ######################################################################
+    def _create_inventories(self, count):
+        """ Factory method to create pets in bulk """
+        inventories = []
+        for _ in range(count):
+            test_inventory = InventoryFactory()
+            resp = self.app.post(
+                BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+            )
+            self.assertEqual(
+                resp.status_code, status.HTTP_201_CREATED, "Could not create test inventory"
+            )
+            new_inventory = resp.get_json()
+            test_inventory.product_id = new_inventory["product_id"]
+            inventories.append(test_inventory)
+        return inventories
+
+    def test_index(self):
+        """ Test index call """
+        resp = self.app.get("/")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    ######################################################################
+    # Testing POST
     def test_create_inventory(self):
         """ Create a new inventory """
         test_inventory = InventoryFactory()
@@ -144,7 +167,72 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(resp.status_code,
                          status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    def test_index(self):
-        """ Test index call """
-        resp = self.app.get("/")
+    ######################################################################
+    # Testing GET
+    def test_get_inventory_by_pid(self):
+        """ Get Inventory by [product_id] """
+        N = 5
+        count = 0
+        inventories = self._create_inventories(N)
+        for inv in inventories:
+            resp = self.app.get(
+                "{0}/{1}".format(BASE_URL, inv.product_id), content_type="application/json")
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            count += len(resp.get_json())
+        self.assertEqual(count, N)
+
+    def test_get_inventory_by_pid_not_found(self):
+        """ Get Inventory by [product_id] that not found """
+        resp = self.app.get("{0}/{1}".format(BASE_URL, 0),
+                            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_inventory_by_condition(self):
+        """ Get Inventory by [condition] """
+        count_new = 0
+        count_open = 0
+        count_used = 0
+        inventories = self._create_inventories(10)
+        for inv in inventories:
+            if inv.condition == Condition.NEW:
+                count_new += 1
+            elif inv.condition == Condition.OPEN_BOX:
+                count_open += 1
+            elif inv.condition == Condition.USED:
+                count_used += 1
+
+        resp = self.app.get("{0}/condition/NEW".format(BASE_URL),
+                            content_type="application/json")
+        if resp.status_code == status.HTTP_200_OK:
+            count = len(resp.get_json())
+            self.assertEqual(count, count_new)
+
+        resp = self.app.get("{0}/condition/OPEN_BOX".format(BASE_URL),
+                            content_type="application/json")
+        if resp.status_code == status.HTTP_200_OK:
+            count = len(resp.get_json())
+            self.assertEqual(count, count_open)
+
+        resp = self.app.get("{0}/condition/USED".format(BASE_URL),
+                            content_type="application/json")
+        if resp.status_code == status.HTTP_200_OK:
+            count = len(resp.get_json())
+            self.assertEqual(count, count_used)
+
+    def test_get_inventory_by_pid_condition(self):
+        """Get an Inventory by [product_id, condition]"""
+        test_inventory = self._create_inventories(1)[0]
+        pid = test_inventory.product_id
+        condition = test_inventory.condition.name
+        resp = self.app.get("{0}/{1}/condition/{2}".format(BASE_URL,
+                                                           pid, condition), content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["product_id"], pid)
+        self.assertEqual(data["condition"], condition)
+
+    def test_get_inventory_by_pid_condition_not_found(self):
+        """ Get an Inventory by [product_id, condition] that not found """
+        resp = self.app.get(
+            "{0}/0/condition/NEW".format(BASE_URL), content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

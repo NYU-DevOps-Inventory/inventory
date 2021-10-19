@@ -37,7 +37,7 @@ Test cases for Inventory Model
 Test cases can be run with:
     nosetests
     coverage report -m
-    
+
 While debugging just these tests it's convinient to use this:
     nosetests --stop tests/test_models.py:TestInventoryModel
 """
@@ -111,3 +111,44 @@ class TestInventoryModel(unittest.TestCase):
         # Assert that it shows up in the database
         inventories = Inventory.all()
         self.assertEqual(len(inventories), 1)
+
+    ######################################################################
+    def test_find_by_pid_condition(self):
+        """ Find an Inventory by [product_id] and [condition] """
+        inventory = Inventory(
+            product_id=123, condition=Condition.NEW, quantity=2, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        result = Inventory.find_by_pid_condition(
+            inventory.product_id, inventory.condition)
+        self.assertIsNot(result, None)
+        self.assertEqual(result.product_id, inventory.product_id)
+        self.assertEqual(result.condition, inventory.condition)
+        self.assertEqual(result.quantity, inventory.quantity)
+        self.assertEqual(result.restock_level, inventory.restock_level)
+
+    def test_find_by_pid(self):
+        """ Find Inventory by [product_id] """
+        inventory = Inventory(
+            product_id=124, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=124, condition=Condition.USED, quantity=4)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_pid(inventory.product_id)
+        self.assertEqual(len(list(inventories)), 2)
+
+    def test_find_by_condition(self):
+        """ Find an Inventory by [condition] """
+        inventory = Inventory(
+            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_condition(inventory.condition)
+        self.assertEqual(len(list(inventories)), 2)

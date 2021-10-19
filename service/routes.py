@@ -19,16 +19,16 @@ Paths:
 ------
 GET /inventory
     - Returns a list all of the Inventory
-GET /inventory/{int:product_id}/condition/{enum:condition}
+GET /inventory/{int:product_id}/condition/{string:condition}
     - Returns the Inventory with the given product_id and condition
 
 POST /inventory
     - Creates a new Inventory record in the database
 
-PUT /inventory/{int:product_id}/condition/{enum:condition}
+PUT /inventory/{int:product_id}/condition/{string:condition}
     - Updates the Inventory with the given product_id and condition
 
-DELETE /inventory/{int:product_id}/condition/{enum:condition}
+DELETE /inventory/{int:product_id}/condition/{string:condition}
     - Deletes the Inventory with the given product_id and condition
 """
 
@@ -54,7 +54,7 @@ def index():
 
 
 ######################################################################
-# ADD A NEW INVENTORY
+# POST: ADD A NEW INVENTORY
 ######################################################################
 @app.route("/inventory", methods=["POST"])
 def create_inventory():
@@ -73,6 +73,57 @@ def create_inventory():
     return make_response(
         jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
     )
+
+######################################################################
+# GET: RETRIEVE INVENTORY
+######################################################################
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["GET"])
+def get_inventory_by_pid_condition(product_id, condition):
+    """ Retrieve inventory by the given product_id and condition """
+    app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
+        product_id, condition))
+    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    if not inventory:
+        return NotFound("Inventory with product_id '{}' and condition '{}' was not found.)".format(product_id, condition))
+    app.logger.info("Return inventory with product_id {} and condition {}".format(
+        product_id, condition))
+    return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+
+@app.route("/inventory/<int:product_id>", methods=["GET"])
+def get_inventory_by_pid(product_id):
+    """
+    Retrieve Inventory by product_id
+
+    This endpoint will return Inventory based on product's id
+    """
+    app.logger.info("Request for inventory with product_id: %s", product_id)
+    inventories = Inventory.find_by_pid(product_id)
+    if not inventories:
+        raise NotFound(
+            "Inventory with product_id '{}' was not found.".format(product_id))
+
+    results = [inventory.serialize() for inventory in inventories]
+    return make_response(jsonify(results), status.HTTP_200_OK)
+
+
+@app.route("/inventory/condition/<string:condition>", methods=["GET"])
+def get_inventory_by_condition(condition):
+    """
+    Retrieve Inventory by condition
+
+    This endpoint will return Inventory based on product's condition
+    """
+    app.logger.info("Request for inventory with condition: %s", condition)
+    inventories = Inventory.find_by_condition(condition)
+    if not inventories:
+        raise NotFound(
+            "Inventory with condition '{}' was not found.".format(condition))
+
+    results = [inventory.serialize() for inventory in inventories]
+    return make_response(jsonify(results), status.HTTP_200_OK)
 
 
 def init_db():
