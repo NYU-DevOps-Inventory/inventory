@@ -47,11 +47,22 @@ from service.models import DataValidationError, Inventory
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
 
+######################################################################
+# GET INDEX
+######################################################################
+
 
 @app.route("/")
 def index():
-    return "Hello, World!"
-
+    """ Root URL response """
+    return (
+        jsonify(
+            name="Inventory REST API Service",
+            version="1.0",
+            paths=url_for("list_inventory", _external=True),
+        ),
+        status.HTTP_200_OK,
+    )
 
 ######################################################################
 # GET: LIST ALL INVENTORY

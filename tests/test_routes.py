@@ -40,7 +40,7 @@ Test cases can be run with the following:
   codecov --token=$CODECOV_TOKEN
 
 While debugging just these tests it's convinient to use this:
-    nosetests --stop tests/test_routes.py:TestInventoryServer
+  nosetests --stop tests/test_routes.py:TestInventoryServer
 """
 
 import logging
@@ -110,11 +110,6 @@ class TestInventoryServer(unittest.TestCase):
             inventories.append(test_inventory)
         return inventories
 
-    def test_index(self):
-        """ Test index call """
-        resp = self.app.get("/")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-
     ######################################################################
     # Testing POST
     def test_create_inventory(self):
@@ -169,6 +164,13 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing GET
+    def test_index(self):
+        """ Test the Home Page """
+        resp = self.app.get("/")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], "Inventory REST API Service")
+
     def test_get_inventory_list(self):
         """ Get a list of Inventory """
         count = 5
