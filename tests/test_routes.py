@@ -169,6 +169,15 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing GET
+    def test_get_inventory_list(self):
+        """ Get a list of Inventory """
+        count = 5
+        self._create_inventories(count)
+        resp = self.app.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), count)
+
     def test_get_inventory_by_pid(self):
         """ Get Inventory by [product_id] """
         N = 5

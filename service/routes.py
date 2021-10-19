@@ -54,8 +54,23 @@ def index():
 
 
 ######################################################################
+# GET: LIST ALL INVENTORY
+######################################################################
+
+
+@app.route("/inventory", methods=["GET"])
+def list_inventory():
+    """ Return all of the Inventory """
+    app.logger.info("Request for inventory list")
+    inventories = Inventory.all()
+    results = [inventory.serialize() for inventory in inventories]
+    return make_response(jsonify(results), status.HTTP_200_OK)
+
+######################################################################
 # POST: ADD A NEW INVENTORY
 ######################################################################
+
+
 @app.route("/inventory", methods=["POST"])
 def create_inventory():
     """
