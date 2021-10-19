@@ -90,6 +90,14 @@ class TestInventoryModel(unittest.TestCase):
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
+    def test_repr_of_an_inventory(self):
+        product_id = 1
+        condition = Condition.NEW
+        inventory = Inventory(product_id=product_id,
+                              condition=condition, quantity=2, restock_level=3)
+        self.assertIsNot(inventory, None)
+        self.assertEqual(
+            str(inventory), f"<Inventory product_id=[{product_id}] with condition=[{condition}] condition>")
 
     def test_create_an_inventory(self):
         """ Create an inventory and assert that it exists """
@@ -103,7 +111,8 @@ class TestInventoryModel(unittest.TestCase):
 
     def test_update_inventory(self):
         """ Update an existing record in inventory """
-        inventory = Inventory(product_id=1, condition=Condition.NEW, quantity=100, restock_level=40)
+        inventory = Inventory(
+            product_id=1, condition=Condition.NEW, quantity=100, restock_level=40)
         inventory.create()
         orininal_product_id = inventory.product_id
         original_condition = inventory.condition
@@ -116,7 +125,6 @@ class TestInventoryModel(unittest.TestCase):
         self.assertEqual(latest_inventory[0].condition, original_condition)
         self.assertEqual(latest_inventory[0].quantity, 70)
         self.assertEqual(latest_inventory[0].restock_level, 50)
-
 
     def test_add_an_inventory(self):
         """ Create an inventory and add it to the database """
