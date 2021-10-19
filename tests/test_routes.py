@@ -144,6 +144,55 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(resp.status_code,
                          status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
+    def test_update_inventory(self):
+        """Update an existing record in Inventory"""
+        # create a record in Inventory
+        inventory = InventoryFactory()
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+        # update the record
+        new_inventory = resp.get_json()
+        logging.debug(new_inventory)
+        new_inventory["quantity"] = 999
+        new_inventory["restock_level"] = 99
+        resp = self.app.put(
+            "/inventory/{}/condition/{}".format(new_inventory["product_id"], new_inventory["condition"]),
+            json=new_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_inventory = resp.get_json()
+        self.assertEqual(updated_inventory["quantity"], 999)
+        self.assertEqual(updated_inventory["restock_level"], 99)
+    
+    def test_update_non_exist_inventory(self):
+        """Update a non-existing record in Inventory"""
+        # update a record
+        inventory = InventoryFactory()
+        test_inventory = inventory.serialize()
+        resp = self.app.put(
+            "/inventory/{}/condition/{}".format(test_inventory["product_id"],test_inventory["condition"]),
+            json=test_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_bad_inventory(self):
+        """Update a record with invalid product id in Inventory"""
+        # update a record
+        inventory = InventoryFactory()
+        test_inventory = inventory.serialize()
+        test_inventory["product_id"] = -1  # wrong test 
+        resp = self.app.put(
+            "/inventory/{}/condition/{}".format(test_inventory["product_id"],test_inventory["condition"]),
+            json=test_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_index(self):
         """ Test index call """
         resp = self.app.get("/")

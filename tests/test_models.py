@@ -88,6 +88,10 @@ class TestInventoryModel(unittest.TestCase):
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
+    def test_repr(self):
+        inventory = Inventory(
+            product_id=1, condition=Condition.NEW, quantity=2, restock_level=3)
+        self.assertEqual(inventory.__repr__(), "<Inventory product_id=[1] with condition=[Condition.NEW] condition>")
 
     def test_create_an_inventory(self):
         """ Create an inventory and assert that it exists """
@@ -111,3 +115,21 @@ class TestInventoryModel(unittest.TestCase):
         # Assert that it shows up in the database
         inventories = Inventory.all()
         self.assertEqual(len(inventories), 1)
+
+    def test_update_inventory(self):
+        """ Update an existing record in inventory"""
+        inventory = Inventory(product_id=1, condition=Condition.NEW, quantity=100, restock_level=40)
+        inventory.create()
+        orininal_product_id = inventory.product_id
+        original_condition = inventory.condition
+        inventory.quantity = 70
+        inventory.restock_level = 50
+        inventory.update()
+        
+        latest_inventory = Inventory.all()
+
+        self.assertEqual(len(latest_inventory), 1)
+        self.assertEqual(latest_inventory[0].product_id, orininal_product_id)
+        self.assertEqual(latest_inventory[0].condition, original_condition)
+        self.assertEqual(latest_inventory[0].quantity, 70)
+        self.assertEqual(latest_inventory[0].restock_level, 50)

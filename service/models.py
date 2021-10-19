@@ -45,7 +45,7 @@ class Inventory(db.Model):
     restock_level = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
-        return "<Inventory product_id=[%s] with condition=[%s] condition>" % self.product_id, self.condition
+        return "<Inventory product_id=[%s] with condition=[%s] condition>" % (self.product_id, self.condition)
 
     def create(self):
         """
@@ -53,6 +53,15 @@ class Inventory(db.Model):
         """
         logger.info("Creating %s", self.product_id)
         db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        """
+        Updates an record in the inventory
+        """
+        logger.info("Saving product %s with condition %s", self.product_id, self.condition)
+        if not self.product_id or not self.condition:
+            raise DataValidationError("Update called with empty product ID or condition")
         db.session.commit()
 
     def serialize(self):
@@ -102,3 +111,9 @@ class Inventory(db.Model):
         """ Return all of the Inventories in the database """
         logger.info("Processing all Inventories")
         return cls.query.all()
+
+    @classmethod
+    def find(cls, product_id: int, condition: Condition):
+        """Find in the Inventory by product id and condition"""
+        logger.info("Processing lookup for product %s of condition %s", product_id, condition)
+        return cls.query.get((product_id, condition))
