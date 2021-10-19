@@ -171,7 +171,8 @@ def update_inventory(product_id, condition):
     inventory.product_id = product_id
     inventory.condition = condition
     inventory.update()
-    app.logger.info("Inventory of product %s of condition %s updated.", product_id, condition)
+    app.logger.info(
+        "Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
 
 ######################################################################
@@ -190,6 +191,7 @@ def delete_inventory(product_id, condition):
     inventory = Inventory.find_by_pid_condition(product_id, condition)
     if inventory:
         inventory.delete()
+        return make_response(jsonify(result="Deleted!"), status.HTTP_202_ACCEPTED)
     return make_response("", status.HTTP_204_NO_CONTENT)
 
 ######################################################################

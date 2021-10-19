@@ -179,6 +179,7 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing GET
+
     def test_index(self):
         """ Test the Home Page """
         resp = self.app.get("/")
@@ -257,6 +258,9 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(data["product_id"], pid)
         self.assertEqual(data["condition"], condition)
 
+    ######################################################################
+    # Testing PUT
+
     def test_update_inventory(self):
         """Update an existing record in Inventory"""
         # create a record in Inventory
@@ -271,7 +275,8 @@ class TestInventoryServer(unittest.TestCase):
         new_inventory["quantity"] = 999
         new_inventory["restock_level"] = 99
         resp = self.app.put(
-            "/inventory/{}/condition/{}".format(new_inventory["product_id"], new_inventory["condition"]),
+            "/inventory/{}/condition/{}".format(
+                new_inventory["product_id"], new_inventory["condition"]),
             json=new_inventory,
             content_type="application/json",
         )
@@ -279,18 +284,22 @@ class TestInventoryServer(unittest.TestCase):
         updated_inventory = resp.get_json()
         self.assertEqual(updated_inventory["quantity"], 999)
         self.assertEqual(updated_inventory["restock_level"], 99)
-    
+
     def test_update_non_exist_inventory(self):
         """Update a non-existing record in Inventory"""
         # update a record
         inventory = InventoryFactory()
         test_inventory = inventory.serialize()
         resp = self.app.put(
-            "/inventory/{}/condition/{}".format(test_inventory["product_id"],test_inventory["condition"]),
+            "/inventory/{}/condition/{}".format(
+                test_inventory["product_id"], test_inventory["condition"]),
             json=test_inventory,
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    ######################################################################
+    # Testing DELETE
 
     def test_delete_inventory(self):
         """ Delete an inventory """
@@ -298,13 +307,18 @@ class TestInventoryServer(unittest.TestCase):
         resp = self.app.delete(
             "{0}/{1}/condition/{2}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
         )
-        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(len(resp.data), 0)
+        self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
         # make sure they are deleted
         resp = self.app.get(
             "{}/{}/condition/{}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # if can not find sth to delete
+        resp = self.app.delete(
+            "{0}/{1}/condition/{2}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(resp.data), 0)
 
     def test_get_inventory_by_pid_condition_not_found(self):
         """ Get an Inventory by [product_id, condition] that not found """
