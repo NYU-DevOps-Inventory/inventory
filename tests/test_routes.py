@@ -40,7 +40,7 @@ Test cases can be run with the following:
   codecov --token=$CODECOV_TOKEN
 
 While debugging just these tests it's convinient to use this:
-    nosetests --stop tests/test_routes.py:TestInventoryServer
+  nosetests --stop tests/test_routes.py:TestInventoryServer
 """
 
 import logging
@@ -110,13 +110,9 @@ class TestInventoryServer(unittest.TestCase):
             inventories.append(test_inventory)
         return inventories
 
-    def test_index(self):
-        """ Test index call """
-        resp = self.app.get("/")
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-
     ######################################################################
     # Testing POST
+
     def test_create_inventory(self):
         """ Create a new inventory """
         test_inventory = InventoryFactory()
@@ -140,7 +136,21 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(
             new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
         )
-        # TODO: After implementing "GET" method, check that the location header was correct.
+        # Check that the location header was correct
+        resp = self.app.get(location, content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        new_inventory = resp.get_json()
+        self.assertEqual(
+            new_inventory["product_id"], test_inventory.product_id, "Product_id do not match")
+        self.assertEqual(
+            new_inventory["condition"], test_inventory.condition.name, "Condition do not match"
+        )
+        self.assertEqual(
+            new_inventory["quantity"], test_inventory.quantity, "Quantity does not match"
+        )
+        self.assertEqual(
+            new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
+        )
 
     def test_create_inventory_no_data(self):
         """ Create an inventory with missing data """
@@ -169,6 +179,22 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing GET
+    def test_index(self):
+        """ Test the Home Page """
+        resp = self.app.get("/")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data["name"], "Inventory REST API Service")
+
+    def test_get_inventory_list(self):
+        """ Get a list of Inventory """
+        count = 5
+        self._create_inventories(count)
+        resp = self.app.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(len(data), count)
+
     def test_get_inventory_by_pid(self):
         """ Get Inventory by [product_id] """
         N = 5
@@ -230,6 +256,55 @@ class TestInventoryServer(unittest.TestCase):
         data = resp.get_json()
         self.assertEqual(data["product_id"], pid)
         self.assertEqual(data["condition"], condition)
+
+    def test_update_inventory(self):
+        """Update an existing record in Inventory"""
+        # create a record in Inventory
+        inventory = InventoryFactory()
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record
+        new_inventory = resp.get_json()
+        logging.debug(new_inventory)
+        new_inventory["quantity"] = 999
+        new_inventory["restock_level"] = 99
+        resp = self.app.put(
+            "/inventory/{}/condition/{}".format(new_inventory["product_id"], new_inventory["condition"]),
+            json=new_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_inventory = resp.get_json()
+        self.assertEqual(updated_inventory["quantity"], 999)
+        self.assertEqual(updated_inventory["restock_level"], 99)
+    
+    def test_update_non_exist_inventory(self):
+        """Update a non-existing record in Inventory"""
+        # update a record
+        inventory = InventoryFactory()
+        test_inventory = inventory.serialize()
+        resp = self.app.put(
+            "/inventory/{}/condition/{}".format(test_inventory["product_id"],test_inventory["condition"]),
+            json=test_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_inventory(self):
+        """ Delete an inventory """
+        test_invenotory = self._create_inventories(1)[0]
+        resp = self.app.delete(
+            "{0}/{1}/condition/{2}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(resp.data), 0)
+        # make sure they are deleted
+        resp = self.app.get(
+            "{}/{}/condition/{}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_by_pid_condition_not_found(self):
         """ Get an Inventory by [product_id, condition] that not found """
