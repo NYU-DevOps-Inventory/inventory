@@ -117,6 +117,7 @@ class TestInventoryServer(unittest.TestCase):
 
     ######################################################################
     # Testing POST
+
     def test_create_inventory(self):
         """ Create a new inventory """
         test_inventory = InventoryFactory()
@@ -140,7 +141,21 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(
             new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
         )
-        # TODO: After implementing "GET" method, check that the location header was correct.
+        # Check that the location header was correct
+        resp = self.app.get(location, content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        new_inventory = resp.get_json()
+        self.assertEqual(
+            new_inventory["product_id"], test_inventory.product_id, "Product_id do not match")
+        self.assertEqual(
+            new_inventory["condition"], test_inventory.condition.name, "Condition do not match"
+        )
+        self.assertEqual(
+            new_inventory["quantity"], test_inventory.quantity, "Quantity does not match"
+        )
+        self.assertEqual(
+            new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
+        )
 
     def test_create_inventory_no_data(self):
         """ Create an inventory with missing data """
@@ -230,6 +245,20 @@ class TestInventoryServer(unittest.TestCase):
         data = resp.get_json()
         self.assertEqual(data["product_id"], pid)
         self.assertEqual(data["condition"], condition)
+
+    def test_delete_inventory(self):
+        """ Delete an inventory """
+        test_invenotory = self._create_inventories(1)[0]
+        resp = self.app.delete(
+            "{0}/{1}/condition/{2}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(resp.data), 0)
+        # make sure they are deleted
+        resp = self.app.get(
+            "{}/{}/condition/{}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_by_pid_condition_not_found(self):
         """ Get an Inventory by [product_id, condition] that not found """

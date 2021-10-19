@@ -55,6 +55,15 @@ class Inventory(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    def delete(self):
+        """
+        Remove an Inventory from the database
+        """
+        logger.info("Deleting %s with %s condition",
+                    self.product_id, self.condition.name)
+        db.session.delete(self)
+        db.session.commit()
+
     def serialize(self):
         """ Serialize an Inventory into a dictionary """
         return {
