@@ -114,7 +114,8 @@ def get_inventory_by_pid_condition(product_id, condition):
         product_id, condition))
     inventory = Inventory.find_by_pid_condition(product_id, condition)
     if not inventory:
-        return NotFound("Inventory with product_id '{}' and condition '{}' was not found.)".format(product_id, condition))
+        raise NotFound("Inventory with product_id '{}' and condition '{}' was not found.)".format(
+            product_id, condition))
     app.logger.info("Return inventory with product_id {} and condition {}".format(
         product_id, condition))
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
@@ -171,7 +172,8 @@ def update_inventory(product_id, condition):
     inventory.product_id = product_id
     inventory.condition = condition
     inventory.update()
-    app.logger.info("Inventory of product %s of condition %s updated.", product_id, condition)
+    app.logger.info(
+        "Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
 
 ######################################################################

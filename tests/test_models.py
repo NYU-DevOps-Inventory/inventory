@@ -144,7 +144,7 @@ class TestInventoryModel(unittest.TestCase):
         inventory = InventoryFactory()
         inventory.create()
         self.assertEqual(len(Inventory.all()), 1)
-        # delete the pet and make sure it isn't in the database
+        # delete the inventory and make sure it isn't in the database
         inventory.delete()
         self.assertEqual(len(Inventory.all()), 0)
 
