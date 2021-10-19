@@ -55,6 +55,15 @@ class Inventory(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    def update(self):
+        """
+        Updates an record in the inventory
+        """
+        logger.info("Saving product %s with condition %s", self.product_id, self.condition)
+        if not self.product_id or not self.condition:
+            raise DataValidationError("Update called with empty product ID or condition")
+        db.session.commit()
+
     def delete(self):
         """
         Remove an Inventory from the database

@@ -154,6 +154,27 @@ def get_inventory_by_condition(condition):
     return make_response(jsonify(results), status.HTTP_200_OK)
 
 ######################################################################
+# PUT: UPDATE IN THE INVENTORY
+######################################################################
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["PUT"])
+def update_inventory(product_id, condition):
+    """Update the inventory"""
+    app.logger.info("Request to update the inventory \
+        with product_id {} and condition {}".format(product_id, condition))
+    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    if not inventory:
+        raise NotFound("Inventory with product '{}' of condition '{}' \
+            was not found".format(product_id, condition))
+    inventory.deserialize(request.get_json())
+    inventory.product_id = product_id
+    inventory.condition = condition
+    inventory.update()
+    app.logger.info("Inventory of product %s of condition %s updated.", product_id, condition)
+    return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+######################################################################
 # DELETE A INVENTORY
 ######################################################################
 
