@@ -19,16 +19,16 @@ Paths:
 ------
 GET /inventory
     - Returns a list all of the Inventory
-GET /inventory/{int:product_id}/condition/{enum:condition}
+GET /inventory/{int:product_id}/condition/{string:condition}
     - Returns the Inventory with the given product_id and condition
 
 POST /inventory
     - Creates a new Inventory record in the database
 
-PUT /inventory/{int:product_id}/condition/{enum:condition}
+PUT /inventory/{int:product_id}/condition/{string:condition}
     - Updates the Inventory with the given product_id and condition
 
-DELETE /inventory/{int:product_id}/condition/{enum:condition}
+DELETE /inventory/{int:product_id}/condition/{string:condition}
     - Deletes the Inventory with the given product_id and condition
 """
 
@@ -81,10 +81,7 @@ def create_inventory():
 
 @app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["GET"])
 def get_inventory_by_pid_condition(product_id, condition):
-    """
-    Retrieve inventory by the given product_id and condition
-    GET /inventory/<int:product_id>/condition/<enum:condition>
-    """
+    """ Retrieve inventory by the given product_id and condition """
     app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
         product_id, condition))
     inventory = Inventory.find_by_pid_condition(product_id, condition)
