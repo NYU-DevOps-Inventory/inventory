@@ -144,7 +144,7 @@ class TestInventoryModel(unittest.TestCase):
         inventory = InventoryFactory()
         inventory.create()
         self.assertEqual(len(Inventory.all()), 1)
-        # delete the inventory and make sure it isn't in the database
+        # delete the pet and make sure it isn't in the database
         inventory.delete()
         self.assertEqual(len(Inventory.all()), 0)
 
@@ -187,57 +187,3 @@ class TestInventoryModel(unittest.TestCase):
             inventory.create()
         inventories = Inventory.find_by_condition(inventory.condition)
         self.assertEqual(len(list(inventories)), 2)
-
-    def test_serialize_an_inventory(self):
-        """Test serialization of an inventory"""
-        inventory = InventoryFactory()
-        data = inventory.serialize()
-        self.assertNotEqual(data, None)
-        self.assertIn("product_id", data)
-        self.assertEqual(data["product_id"], inventory.product_id)
-        self.assertIn("condition", data)
-        self.assertEqual(data["condition"], inventory.condition.name)
-        self.assertIn("quantity", data)
-        self.assertEqual(data["quantity"], inventory.quantity)
-        self.assertIn("restock_level", data)
-        self.assertEqual(data["restock_level"], inventory.restock_level)
-
-    def test_deserialize_an_inventory(self):
-        """ Test deserialization of an Inventory """
-        data = {
-            "product_id": 1,
-            "condition": "NEW",
-            "quantity": 2,
-            "restock_level": 3,
-        }
-        inventory = Inventory()
-        inventory.deserialize(data)
-        self.assertNotEqual(inventory, None)
-        self.assertEqual(inventory.product_id, 1)
-        self.assertEqual(inventory.condition.name, "NEW")
-        self.assertEqual(inventory.quantity, 2)
-        self.assertEqual(inventory.restock_level, 3)
-
-    def test_deserialize_missing_data(self):
-        """ Test deserialization of an Inventory with missing data """
-        data = {
-            "product_id": 1,
-            "quantity": 2,
-            "restock_level": 3,
-        }
-        inventory = Inventory()
-        self.assertRaises(DataValidationError, inventory.deserialize, data)
-
-    def test_deserialize_bad_data(self):
-        """ Test deserialization of bad data """
-        data = "this is not a dictionary"
-        inventory = Inventory()
-        self.assertRaises(DataValidationError, inventory.deserialize, data)
-
-    def test_deserialize_bad_gender(self):
-        """ Test deserialization of bad condition attribute """
-        test_inventory = InventoryFactory()
-        data = test_inventory.serialize()
-        data["condition"] = "new"  # wrong case
-        inventory = Inventory()
-        self.assertRaises(DataValidationError, inventory.deserialize, data)
