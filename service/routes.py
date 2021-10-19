@@ -47,15 +47,41 @@ from service.models import DataValidationError, Inventory
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
 
+######################################################################
+# GET INDEX
+######################################################################
+
 
 @app.route("/")
 def index():
-    return "Hello, World!"
+    """ Root URL response """
+    return (
+        jsonify(
+            name="Inventory REST API Service",
+            version="1.0",
+            paths=url_for("list_inventory", _external=True),
+        ),
+        status.HTTP_200_OK,
+    )
 
+######################################################################
+# GET: LIST ALL INVENTORY
+######################################################################
+
+
+@app.route("/inventory", methods=["GET"])
+def list_inventory():
+    """ Return all of the Inventory """
+    app.logger.info("Request for inventory list")
+    inventories = Inventory.all()
+    results = [inventory.serialize() for inventory in inventories]
+    return make_response(jsonify(results), status.HTTP_200_OK)
 
 ######################################################################
 # POST: ADD A NEW INVENTORY
 ######################################################################
+
+
 @app.route("/inventory", methods=["POST"])
 def create_inventory():
     """
@@ -130,6 +156,8 @@ def get_inventory_by_condition(condition):
 ######################################################################
 # PUT: UPDATE IN THE INVENTORY
 ######################################################################
+
+
 @app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["PUT"])
 def update_inventory(product_id, condition):
     """Update the inventory"""
@@ -145,12 +173,6 @@ def update_inventory(product_id, condition):
     inventory.update()
     app.logger.info("Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
-
-def init_db():
-    """ Initialize the SQLAlchemy app """
-    global app
-    Inventory.init_db(app)
-
 
 ######################################################################
 # DELETE A INVENTORY
