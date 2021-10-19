@@ -241,6 +241,7 @@ class TestInventoryServer(unittest.TestCase):
         condition = test_inventory.condition.name
         resp = self.app.get("{0}/{1}/condition/{2}".format(BASE_URL,
                                                            pid, condition), content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(data["product_id"], pid)
         self.assertEqual(data["condition"], condition)
@@ -253,11 +254,11 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(len(resp.data), 0)
-        # # make sure they are deleted
-        # resp = self.app.get(
-        #     "{}/{}".format(BASE_URL, test_invenotory.product_id), content_type="application/json"
-        # )
-        # self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        # make sure they are deleted
+        resp = self.app.get(
+            "{}/{}/condition/{}".format(BASE_URL, test_invenotory.product_id, test_invenotory.condition.name), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_by_pid_condition_not_found(self):
         """ Get an Inventory by [product_id, condition] that not found """

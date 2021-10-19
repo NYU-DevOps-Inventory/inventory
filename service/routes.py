@@ -42,7 +42,7 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import NotFound
 
-from service.models import Condition, DataValidationError, Inventory
+from service.models import DataValidationError, Inventory
 
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
