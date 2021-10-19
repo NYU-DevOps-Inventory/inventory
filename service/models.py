@@ -102,3 +102,22 @@ class Inventory(db.Model):
         """ Return all of the Inventories in the database """
         logger.info("Processing all Inventories")
         return cls.query.all()
+
+    @classmethod
+    def find_by_pid(cls, product_id: int):
+        """ Finds Inventory by product ID """
+        logger.info("Processing lookup for id %s ...", product_id)
+        return cls.query.filter(cls.product_id == product_id).all()
+
+    @classmethod
+    def find_by_condition(cls, condition):
+        """ Returns Inventory by condition """
+        logger.info("Processing lookup for condition %s ...", condition)
+        return cls.query.filter(cls.condition == condition).all()
+
+    @classmethod
+    def find_by_pid_condition(cls, pid, condition):
+        """ Finds an Inventory record by product_id and condition """
+        logger.info(
+            "Processing lookup for product_id %s and condition %s ...", pid, condition)
+        return cls.query.get((pid, condition))
