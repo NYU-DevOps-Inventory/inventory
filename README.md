@@ -39,7 +39,13 @@ This project is the back-end for an eCommerce website as a RESTful microservice 
 
 ## Database Schema
 
-Model: `Inventory`
+### `Condition` Enum
+
+- `NEW`
+- `OPEN_BOX`
+- `USED`
+
+### `Inventory` Model
 
 | Field           | Type    | Description             | Primary Key | Nullable |
 | :-------------- | :------ | :---------------------- | :---------: | :------: |
