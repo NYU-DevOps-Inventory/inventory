@@ -1,8 +1,3 @@
----
-title: NYU-DevOps-Inventory/inventory
-tags: NYU
----
-
 # NYU-DevOps-Inventory/inventory
 
 ## Get Started
