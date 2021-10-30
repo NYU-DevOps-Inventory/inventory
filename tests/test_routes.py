@@ -191,6 +191,28 @@ class TestInventoryServer(unittest.TestCase):
         data = resp.get_json()
         self.assertEqual(len(data), count)
 
+    def test_get_inventory_by_restock_level(self):
+        """ Get a list of Inventory by [restock_level] """
+        N = 5
+        count = 0
+        inventories = self._create_inventories(N)
+        for inv in inventories:
+            resp = self.app.get(
+                "{0}?restock_level={1}".format(BASE_URL, inv.restock_level), content_type="application/json")
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            count += len(resp.get_json())
+        self.assertEqual(count, N)
+
+    def test_get_inventory_by_restock_level_not_found(self):
+        """ Get a list of Inventory by [restock_level] that not found """
+        resp = self.app.get("/inventory?restock_level=0")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_get_inventory_bad_request(self):
+        """ Get a list of Inventory that bad request """
+        resp = self.app.get("/inventory?bad=0")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_get_inventory_by_pid(self):
         """ Get Inventory by [product_id] """
         N = 5
