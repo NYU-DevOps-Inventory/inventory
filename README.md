@@ -68,12 +68,12 @@ $ cd /vagrant
 $ FLASK_APP=service:app flask run -h 0.0.0.0
 ```
 
-Now open your browser, you are expected to see the following text when browsing http://0.0.0.0:5000
+Now open your browser, you are expected to see the following text when browsing http://localhost:3000
 
 ```json
 {
   "name": "Inventory REST API Service",
-  "paths": "http://0.0.0.0:5000/inventory",
+  "paths": "http://localhost:3000/inventory",
   "version": "1.0"
 }
 ```
