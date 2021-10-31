@@ -45,10 +45,10 @@ import logging
 import os
 import unittest
 
-from service import app
-from service.models import Condition, DataValidationError, Inventory, db
 from werkzeug.exceptions import NotFound
 
+from service import app
+from service.models import Condition, DataValidationError, Inventory, db
 from tests.factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
@@ -148,13 +148,13 @@ class TestInventoryModel(unittest.TestCase):
         inventory.delete()
         self.assertEqual(len(Inventory.all()), 0)
 
-    def test_find_by_pid_condition(self):
+    def test_find_by_product_id_condition(self):
         """ Find an Inventory by [product_id] and [condition] """
         inventory = Inventory(
             product_id=123, condition=Condition.NEW, quantity=2, restock_level=10)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
-        result = Inventory.find_by_pid_condition(
+        result = Inventory.find_by_product_id_condition(
             inventory.product_id, inventory.condition)
         self.assertIsNot(result, None)
         self.assertEqual(result.product_id, inventory.product_id)
@@ -162,45 +162,64 @@ class TestInventoryModel(unittest.TestCase):
         self.assertEqual(result.quantity, inventory.quantity)
         self.assertEqual(result.restock_level, inventory.restock_level)
 
-    def test_find_by_pid(self):
+    def test_find_by_product_id(self):
         """ Find Inventory by [product_id] """
         inventory = Inventory(
             product_id=124, condition=Condition.NEW, quantity=1, restock_level=10)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
         inventory = Inventory(
             product_id=124, condition=Condition.USED, quantity=4)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
-        inventories = Inventory.find_by_pid(inventory.product_id)
+        inventories = Inventory.find_by_product_id(inventory.product_id)
         self.assertEqual(len(list(inventories)), 2)
 
     def test_find_by_condition(self):
         """ Find an Inventory by [condition] """
         inventory = Inventory(
             product_id=333, condition=Condition.NEW, quantity=1, restock_level=10)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
         inventory = Inventory(
             product_id=344, condition=Condition.NEW, quantity=1, restock_level=10)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
         inventories = Inventory.find_by_condition(inventory.condition)
         self.assertEqual(len(list(inventories)), 2)
+
+    def test_find_by_quantity(self):
+        """ Find an Inventory by [quantity] """
+        inventory = Inventory(
+            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+            inventory = Inventory(
+                product_id=345, condition=Condition.NEW, quantity=2, restock_level=5)
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_quantity(1)
+        self.assertEqual(len(list(inventories)), 2)
+        inventories = Inventory.find_by_quantity(2)
+        self.assertEqual(len(list(inventories)), 1)
 
     def test_find_by_restock_level(self):
         """ Find an Inventory by [restock_level] """
         inventory = Inventory(
             product_id=333, condition=Condition.NEW, quantity=1, restock_level=10)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
         inventory = Inventory(
             product_id=344, condition=Condition.NEW, quantity=1, restock_level=10)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
             inventory = Inventory(
                 product_id=345, condition=Condition.NEW, quantity=1, restock_level=5)
-        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
         inventories = Inventory.find_by_restock_level(10)
         self.assertEqual(len(list(inventories)), 2)

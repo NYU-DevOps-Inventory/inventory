@@ -46,9 +46,11 @@ While debugging just these tests it's convinient to use this:
 import logging
 import os
 import unittest
+from typing import Dict, List, Optional
 from urllib.parse import quote_plus
 
 from service import status  # HTTP Status Codes
+from service.constants import CONDITION, RESTOCK_LEVEL
 from service.models import Condition, DataValidationError, Inventory, db
 from service.routes import app, init_db
 
@@ -184,21 +186,65 @@ class TestInventoryServer(unittest.TestCase):
 
     def test_get_inventory_list(self):
         """ Get a list of Inventory """
-        count = 5
-        self._create_inventories(count)
+        N = 5
+        self._create_inventories(N)
         resp = self.app.get(BASE_URL)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
-        self.assertEqual(len(data), count)
+        self.assertEqual(len(data), N)
+
+    def test_get_inventory_by_query_product_id(self):
+        """ Get a list of Inventory by query [product_id] """
+        N = 5
+        count = 0
+        inventories: List[Inventory] = self._create_inventories(N)
+        for inv in inventories:
+            resp = self.app.get(
+                f"{BASE_URL}?product_id={inv.product_id}", content_type="application/json")
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            count += len(resp.get_json())
+        self.assertEqual(count, N)
+
+    def test_get_inventory_by_query_condition(self):
+        """ Get a list of Inventory by query [condition] """
+        count: Dict[str, int] = {Condition.NEW.name: 0,
+                                 Condition.OPEN_BOX.name: 0,
+                                 Condition.USED.name: 0}
+        inventories: List[Inventory] = self._create_inventories(5)
+        for inv in inventories:
+            count[inv.condition.name] += 1
+        for condition in Condition:
+            resp = self.app.get(f"{BASE_URL}?condition={condition.name}",
+                                content_type="application/json")
+            data = resp.get_json()
+            if isinstance(data, dict):
+                error: Optional[str] = data["error"]
+                if error:
+                    self.assertEqual(resp.status_code,
+                                     status.HTTP_404_NOT_FOUND)
+            else:  # type(data) == list
+                self.assertEqual(len(data), count[condition.name])
+
+    def test_get_inventory_by_quantity(self):
+        """ Get a list of Inventory by query [quantity] """
+        N = 5
+        count = 0
+        inventories: List[Inventory] = self._create_inventories(N)
+        for inv in inventories:
+            resp = self.app.get(
+                f"{BASE_URL}?quantity={inv.quantity}", content_type="application/json")
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            count += len(resp.get_json())
+        self.assertEqual(count, N)
 
     def test_get_inventory_by_restock_level(self):
-        """ Get a list of Inventory by [restock_level] """
+        """ Get a list of Inventory by query [restock_level] """
         N = 5
         count = 0
         inventories = self._create_inventories(N)
         for inv in inventories:
             resp = self.app.get(
-                "{0}?restock_level={1}".format(BASE_URL, inv.restock_level), content_type="application/json")
+                f"{BASE_URL}?restock_level={inv.restock_level}", content_type="application/json")
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
             count += len(resp.get_json())
         self.assertEqual(count, N)
@@ -213,7 +259,7 @@ class TestInventoryServer(unittest.TestCase):
         resp = self.app.get("/inventory?bad=0")
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_get_inventory_by_pid(self):
+    def test_get_inventory_by_product_id(self):
         """ Get Inventory by [product_id] """
         N = 5
         count = 0
@@ -225,7 +271,7 @@ class TestInventoryServer(unittest.TestCase):
             count += len(resp.get_json())
         self.assertEqual(count, N)
 
-    def test_get_inventory_by_pid_not_found(self):
+    def test_get_inventory_by_product_id_not_found(self):
         """ Get Inventory by [product_id] that not found """
         resp = self.app.get("{0}/{1}".format(BASE_URL, 0),
                             content_type="application/json")
@@ -263,16 +309,16 @@ class TestInventoryServer(unittest.TestCase):
             count = len(resp.get_json())
             self.assertEqual(count, count_used)
 
-    def test_get_inventory_by_pid_condition(self):
+    def test_get_inventory_by_product_id_condition(self):
         """Get an Inventory by [product_id, condition]"""
         test_inventory = self._create_inventories(1)[0]
-        pid = test_inventory.product_id
+        product_id = test_inventory.product_id
         condition = test_inventory.condition.name
         resp = self.app.get("{0}/{1}/condition/{2}".format(BASE_URL,
-                                                           pid, condition), content_type="application/json")
+                                                           product_id, condition), content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
-        self.assertEqual(data["product_id"], pid)
+        self.assertEqual(data["product_id"], product_id)
         self.assertEqual(data["condition"], condition)
 
     def test_update_inventory(self):
@@ -326,7 +372,7 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_get_inventory_by_pid_condition_not_found(self):
+    def test_get_inventory_by_product_id_condition_not_found(self):
         """ Get an Inventory by [product_id, condition] that not found """
         resp = self.app.get(
             "{0}/0/condition/NEW".format(BASE_URL), content_type="application/json")
