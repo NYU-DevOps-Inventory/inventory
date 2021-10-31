@@ -37,6 +37,7 @@ DELETE /inventory/{int:product_id}/condition/{string:condition}
 import logging
 import os
 import sys
+from typing import Dict, Union
 
 from flask import Flask, abort, jsonify, make_response, request, url_for
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
@@ -44,8 +45,9 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import NotFound
 
+from service.constants import CONDITION, PRODUCT_ID, QUANTITY, RESTOCK_LEVEL
 from service.error_handlers import bad_request, not_found
-from service.models import DataValidationError, Inventory
+from service.models import Condition, DataValidationError, Inventory
 
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
@@ -76,13 +78,25 @@ def index():
 def list_inventory():
     """ Return a list of the Inventory """
     app.logger.info("Request for inventory list")
-    params = request.args
-    if len(params) == 1:
-        restock_level = params.get("restock_level")
-        if restock_level:
+    params: Dict[str, Union[int, str]] = request.args
+    # message = "A GET request for all inventory"
+
+    if PRODUCT_ID in params:
+        product_id: int = params[PRODUCT_ID]
+        inventories = Inventory.find_by_product_id(product_id)
+    elif CONDITION in params:
+        condition: str = params[CONDITION]
+        inventories = Inventory.find_by_condition(Condition[condition])
+    elif QUANTITY in params:
+        quantity: int = params[QUANTITY]
+        inventories = Inventory.find_by_quantity(quantity)
+    elif RESTOCK_LEVEL in params:
+        restock_level: int = params[RESTOCK_LEVEL]
+        # if restock_level == 0, we should still execute the query
+        if restock_level is not None:
             inventories = Inventory.find_by_restock_level(restock_level)
-        else:
-            return bad_request("Invalid request parameteres: missing [restock_level]")
+    elif params:
+        return bad_request("Invalid request parameters")
     else:
         inventories = Inventory.all()
     results = [inventory.serialize() for inventory in inventories]
@@ -108,7 +122,7 @@ def create_inventory():
     inventory.create()
     message = inventory.serialize()
     location_url = url_for(
-        "get_inventory_by_pid_condition", product_id=inventory.product_id, condition=inventory.condition.name, _external=True)
+        "get_inventory_by_product_id_condition", product_id=inventory.product_id, condition=inventory.condition.name, _external=True)
     app.logger.info("Inventory ({}, {}) created."
                     .format(inventory.product_id, inventory.condition))
     return make_response(
@@ -121,11 +135,11 @@ def create_inventory():
 
 
 @app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["GET"])
-def get_inventory_by_pid_condition(product_id, condition):
+def get_inventory_by_product_id_condition(product_id, condition):
     """ Retrieve inventory by the given product_id and condition """
     app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
         product_id, condition))
-    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    inventory = Inventory.find_by_product_id_condition(product_id, condition)
     if not inventory:
         raise NotFound("Inventory with product_id '{}' and condition '{}' was not found.)".format(
             product_id, condition))
@@ -135,14 +149,14 @@ def get_inventory_by_pid_condition(product_id, condition):
 
 
 @app.route("/inventory/<int:product_id>", methods=["GET"])
-def get_inventory_by_pid(product_id):
+def get_inventory_by_product_id(product_id):
     """
     Retrieve Inventory by product_id
 
     This endpoint will return Inventory based on product's id
     """
     app.logger.info("Request for inventory with product_id: %s", product_id)
-    inventories = Inventory.find_by_pid(product_id)
+    inventories = Inventory.find_by_product_id(product_id)
     if not inventories:
         raise NotFound(
             "Inventory with product_id '{}' was not found.".format(product_id))
@@ -177,7 +191,7 @@ def update_inventory(product_id, condition):
     """Update the inventory"""
     app.logger.info("Request to update the inventory \
         with product_id {} and condition {}".format(product_id, condition))
-    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    inventory = Inventory.find_by_product_id_condition(product_id, condition)
     if not inventory:
         raise NotFound("Inventory with product '{}' of condition '{}' \
             was not found".format(product_id, condition))
@@ -202,7 +216,7 @@ def delete_inventory(product_id, condition):
     """
     app.logger.info(
         "Request to delete inventory of which product_id: %s and condition %s", product_id, condition)
-    inventory = Inventory.find_by_pid_condition(product_id, condition)
+    inventory = Inventory.find_by_product_id_condition(product_id, condition)
     if inventory:
         inventory.delete()
     return make_response("", status.HTTP_204_NO_CONTENT)

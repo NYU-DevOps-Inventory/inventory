@@ -124,26 +124,33 @@ class Inventory(db.Model):
         return cls.query.all()
 
     @classmethod
-    def find_by_pid(cls, product_id: int):
+    def find_by_product_id(cls, product_id: int):
         """ Finds Inventory by product ID """
         logger.info("Processing lookup for id %s ...", product_id)
         return cls.query.filter(cls.product_id == product_id).all()
 
     @classmethod
-    def find_by_condition(cls, condition):
+    def find_by_condition(cls, condition: Condition):
         """ Returns Inventory by condition """
         logger.info("Processing lookup for condition %s ...", condition)
         return cls.query.filter(cls.condition == condition).all()
 
     @classmethod
-    def find_by_pid_condition(cls, pid, condition):
+    def find_by_product_id_condition(cls, product_id: int, condition: Condition):
         """ Finds an Inventory record by product_id and condition """
         logger.info(
-            "Processing lookup for product_id %s and condition %s ...", pid, condition)
-        return cls.query.get((pid, condition))
+            "Processing lookup for product_id %s and condition %s ...", product_id, condition)
+        return cls.query.get((product_id, condition))
 
     @classmethod
-    def find_by_restock_level(cls, restock_level):
+    def find_by_quantity(cls, quantity: int):
+        """ Returns Inventory by quantity """
+        logger.info("Processing lookup for quantity %s ...",
+                    quantity)
+        return cls.query.filter(cls.quantity == quantity).all()
+
+    @classmethod
+    def find_by_restock_level(cls, restock_level: int):
         """ Returns Inventory by restock_level """
         logger.info("Processing lookup for restock_level %s ...",
                     restock_level)
