@@ -187,3 +187,22 @@ class TestInventoryModel(unittest.TestCase):
             inventory.create()
         inventories = Inventory.find_by_condition(inventory.condition)
         self.assertEqual(len(list(inventories)), 2)
+
+    def test_find_by_restock_level(self):
+        """ Find an Inventory by [restock_level] """
+        inventory = Inventory(
+            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+            inventory = Inventory(
+                product_id=345, condition=Condition.NEW, quantity=1, restock_level=5)
+        if not Inventory.find_by_pid_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_restock_level(10)
+        self.assertEqual(len(list(inventories)), 2)
+        inventories = Inventory.find_by_restock_level(5)
+        self.assertEqual(len(list(inventories)), 1)

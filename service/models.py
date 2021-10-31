@@ -141,3 +141,10 @@ class Inventory(db.Model):
         logger.info(
             "Processing lookup for product_id %s and condition %s ...", pid, condition)
         return cls.query.get((pid, condition))
+
+    @classmethod
+    def find_by_restock_level(cls, restock_level):
+        """ Returns Inventory by restock_level """
+        logger.info("Processing lookup for restock_level %s ...",
+                    restock_level)
+        return cls.query.filter(cls.restock_level == restock_level).all()

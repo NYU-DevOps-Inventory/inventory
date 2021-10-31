@@ -19,6 +19,8 @@ Paths:
 ------
 GET /inventory
     - Return a list all of the Inventory
+GET /inventory?restock_level=<int>
+    - Return a list of inventory with the given restock_level
 GET /inventory/{int:product_id}/condition/{string:condition}
     - Return the Inventory with the given product_id and condition
 
@@ -42,6 +44,7 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import NotFound
 
+from service.error_handlers import bad_request, not_found
 from service.models import DataValidationError, Inventory
 
 from . import app  # Import Flask application
@@ -71,10 +74,20 @@ def index():
 
 @app.route("/inventory", methods=["GET"])
 def list_inventory():
-    """ Return all of the Inventory """
+    """ Return a list of the Inventory """
     app.logger.info("Request for inventory list")
-    inventories = Inventory.all()
+    params = request.args
+    if len(params) == 1:
+        restock_level = params.get("restock_level")
+        if restock_level:
+            inventories = Inventory.find_by_restock_level(restock_level)
+        else:
+            return bad_request("Invalid request parameteres: missing [restock_level]")
+    else:
+        inventories = Inventory.all()
     results = [inventory.serialize() for inventory in inventories]
+    if len(results) == 0:
+        return not_found("Inventory was not found")
     return make_response(jsonify(results), status.HTTP_200_OK)
 
 ######################################################################
