@@ -194,7 +194,7 @@ def get_inventory_by_condition(condition):
 
 @app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["PUT"])
 def update_inventory(product_id, condition):
-    """Update the inventory"""
+    """ Update the inventory """
     app.logger.info("Request to update the inventory with product_id {} and condition {}".format(
         product_id, condition))
     inventory = Inventory.find_by_product_id_condition(product_id, condition)
@@ -210,9 +210,8 @@ def update_inventory(product_id, condition):
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
 
 
-@app.route("/inventory/<int:product_id>/condition/<string:condition>/activate", methods=["PUT"])
-def activate_inventory(product_id, condition):
-    """activate the inventory"""
+def __toggle_inventory_available(product_id, condition, available):
+    """ Update `available` of the inventory """
     app.logger.info("Request to update the inventory \
         with product_id {} and condition {}".format(product_id, condition))
     inventory = Inventory.find_by_product_id_condition(product_id, condition)
@@ -222,30 +221,23 @@ def activate_inventory(product_id, condition):
     inventory.deserialize(request.get_json())
     inventory.product_id = product_id
     inventory.condition = condition
-    inventory.available = True
+    inventory.available = available
     inventory.update()
     app.logger.info(
         "Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>/activate", methods=["PUT"])
+def activate_inventory(product_id, condition):
+    """ Activate the inventory """
+    return __toggle_inventory_available(product_id, condition, True)
 
 
 @app.route("/inventory/<int:product_id>/condition/<string:condition>/deactivate", methods=["PUT"])
 def deactivate_inventory(product_id, condition):
-    """activate the inventory"""
-    app.logger.info("Request to update the inventory \
-        with product_id {} and condition {}".format(product_id, condition))
-    inventory = Inventory.find_by_product_id_condition(product_id, condition)
-    if not inventory:
-        raise NotFound("Inventory with product '{}' of condition '{}' \
-            was not found".format(product_id, condition))
-    inventory.deserialize(request.get_json())
-    inventory.product_id = product_id
-    inventory.condition = condition
-    inventory.available = False
-    inventory.update()
-    app.logger.info(
-        "Inventory of product %s of condition %s updated.", product_id, condition)
-    return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+    """ Deactivate the inventory """
+    return __toggle_inventory_available(product_id, condition, False)
 
 ######################################################################
 # DELETE A INVENTORY
