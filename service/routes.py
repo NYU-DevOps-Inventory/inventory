@@ -19,8 +19,6 @@ Paths:
 ------
 GET /inventory
     - Return a list all of the Inventory
-GET /inventory?restock_level=<int>
-    - Return a list of inventory with the given restock_level
 GET /inventory/{int:product_id}/condition/{string:condition}
     - Return the Inventory with the given product_id and condition
 
@@ -29,6 +27,10 @@ POST /inventory
 
 PUT /inventory/{int:product_id}/condition/{string:condition}
     - Update the Inventory with the given product_id and condition
+PUT /inventory/{int:product_id}/condition/{string:condition}/activate
+    - Activate the Inventory with the given product_id and condition
+PUT /inventory/{int:product_id}/condition/{string:condition}/deactivate
+    - Deactivate the Inventory with the given product_id and condition
 
 DELETE /inventory/{int:product_id}/condition/{string:condition}
     - Delete the Inventory with the given product_id and condition
@@ -45,7 +47,8 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.exceptions import NotFound
 
-from service.constants import CONDITION, PRODUCT_ID, QUANTITY, RESTOCK_LEVEL
+from service.constants import (AVAILABLE, CONDITION, PRODUCT_ID, QUANTITY,
+                               RESTOCK_LEVEL)
 from service.error_handlers import bad_request, not_found
 from service.models import Condition, DataValidationError, Inventory
 
@@ -95,6 +98,9 @@ def list_inventory():
         # if restock_level == 0, we should still execute the query
         if restock_level is not None:
             inventories = Inventory.find_by_restock_level(restock_level)
+    elif AVAILABLE in params:
+        available: bool = params[AVAILABLE]
+        inventories = Inventory.find_by_availability(available)
     elif params:
         return bad_request("Invalid request parameters")
     else:
@@ -188,7 +194,24 @@ def get_inventory_by_condition(condition):
 
 @app.route("/inventory/<int:product_id>/condition/<string:condition>", methods=["PUT"])
 def update_inventory(product_id, condition):
-    """Update the inventory"""
+    """ Update the inventory """
+    app.logger.info("Request to update the inventory with product_id {} and condition {}".format(
+        product_id, condition))
+    inventory = Inventory.find_by_product_id_condition(product_id, condition)
+    if not inventory:
+        raise NotFound("Inventory with product '{}' of condition '{}' was not found".format(
+            product_id, condition))
+    inventory.deserialize(request.get_json())
+    inventory.product_id = product_id
+    inventory.condition = condition
+    inventory.update()
+    app.logger.info(
+        "Inventory of product %s of condition %s updated.", product_id, condition)
+    return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+
+def __toggle_inventory_available(product_id, condition, available):
+    """ Update `available` of the inventory """
     app.logger.info("Request to update the inventory \
         with product_id {} and condition {}".format(product_id, condition))
     inventory = Inventory.find_by_product_id_condition(product_id, condition)
@@ -198,10 +221,23 @@ def update_inventory(product_id, condition):
     inventory.deserialize(request.get_json())
     inventory.product_id = product_id
     inventory.condition = condition
+    inventory.available = available
     inventory.update()
     app.logger.info(
         "Inventory of product %s of condition %s updated.", product_id, condition)
     return make_response(jsonify(inventory.serialize()), status.HTTP_200_OK)
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>/activate", methods=["PUT"])
+def activate_inventory(product_id, condition):
+    """ Activate the inventory """
+    return __toggle_inventory_available(product_id, condition, True)
+
+
+@app.route("/inventory/<int:product_id>/condition/<string:condition>/deactivate", methods=["PUT"])
+def deactivate_inventory(product_id, condition):
+    """ Deactivate the inventory """
+    return __toggle_inventory_available(product_id, condition, False)
 
 ######################################################################
 # DELETE A INVENTORY
