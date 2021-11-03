@@ -225,7 +225,7 @@ class TestInventoryServer(unittest.TestCase):
             else:  # type(data) == list
                 self.assertEqual(len(data), count[condition.name])
 
-    def test_get_inventory_by_quantity(self):
+    def test_get_inventory_by_query_quantity(self):
         """ Get a list of Inventory by query [quantity] """
         N = 5
         count = 0
@@ -237,11 +237,11 @@ class TestInventoryServer(unittest.TestCase):
             count += len(resp.get_json())
         self.assertEqual(count, N)
 
-    def test_get_inventory_by_restock_level(self):
+    def test_get_inventory_by_query_restock_level(self):
         """ Get a list of Inventory by query [restock_level] """
         N = 5
         count = 0
-        inventories = self._create_inventories(N)
+        inventories: List[Inventory] = self._create_inventories(N)
         for inv in inventories:
             resp = self.app.get(
                 f"{BASE_URL}?restock_level={inv.restock_level}", content_type="application/json")
@@ -249,9 +249,33 @@ class TestInventoryServer(unittest.TestCase):
             count += len(resp.get_json())
         self.assertEqual(count, N)
 
-    def test_get_inventory_by_restock_level_not_found(self):
-        """ Get a list of Inventory by [restock_level] that not found """
+    def test_get_inventory_by_query_available(self):
+        """ Get a list of Inventory by query [available] """
+        count: Dict[bool, int] = {True: 0,
+                                  False: 0}
+        inventories: List[Inventory] = self._create_inventories(5)
+        for inv in inventories:
+            count[inv.available] += 1
+        resp = self.app.get(f"{BASE_URL}?available=True",
+                            content_type="application/json")
+        data = resp.get_json()
+        self.assertEqual(len(data), count[True])
+        resp = self.app.get(f"{BASE_URL}?available=False",
+                            content_type="application/json")
+        data = resp.get_json()
+        self.assertEqual(len(data), count[False])
+
+    def test_get_inventory_by_query_not_found(self):
+        """ Get a list of Inventory by every attributes that not found """
+        resp = self.app.get("/inventory?product_id=0")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.app.get("/inventory?condition=USED")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.app.get("/inventory?quantity=0")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
         resp = self.app.get("/inventory?restock_level=0")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.app.get("/inventory?available=True")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_bad_request(self):
@@ -334,9 +358,8 @@ class TestInventoryServer(unittest.TestCase):
         logging.debug(new_inventory)
         new_inventory["quantity"] = 999
         new_inventory["restock_level"] = 99
-        resp = self.app.put(
-            "/inventory/{}/condition/{}".format(
-                new_inventory["product_id"], new_inventory["condition"]),
+        resp = self.app.put("/inventory/{}/condition/{}".format(
+            new_inventory["product_id"], new_inventory["condition"]),
             json=new_inventory,
             content_type="application/json",
         )
@@ -344,6 +367,48 @@ class TestInventoryServer(unittest.TestCase):
         updated_inventory = resp.get_json()
         self.assertEqual(updated_inventory["quantity"], 999)
         self.assertEqual(updated_inventory["restock_level"], 99)
+
+    def test_activate_inventory(self):
+        """Activate an existing record in Inventory"""
+        inventory = InventoryFactory()
+        inventory.available = False
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record
+        new_inventory = resp.get_json()
+        self.assertEqual(new_inventory["available"], False)
+        logging.debug(new_inventory)
+        resp = self.app.put("/inventory/{}/condition/{}/activate".format(
+            new_inventory["product_id"], new_inventory["condition"]),
+            json=new_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_inventory = resp.get_json()
+        self.assertEqual(updated_inventory["available"], True)
+
+    def test_deactivate_inventory(self):
+        """Deactivate an existing record in Inventory"""
+        inventory = InventoryFactory()
+        inventory.available = True
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record
+        new_inventory = resp.get_json()
+        self.assertEqual(new_inventory["available"], True)
+        logging.debug(new_inventory)
+        resp = self.app.put("/inventory/{}/condition/{}/deactivate".format(
+            new_inventory["product_id"], new_inventory["condition"]),
+            json=new_inventory,
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        updated_inventory = resp.get_json()
+        self.assertEqual(updated_inventory["available"], False)
 
     def test_update_non_exist_inventory(self):
         """Update a non-existing record in Inventory"""
@@ -398,7 +463,8 @@ class TestInventoryServer(unittest.TestCase):
             "product_id": 1,
             "condition": "NEW",
             "quantity": 2,
-            "restock_level": 3
+            "restock_level": 3,
+            "available": True
         }
         inventory = Inventory()
         inventory.deserialize(data)
@@ -407,13 +473,14 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(inventory.condition.name, "NEW")
         self.assertEqual(inventory.quantity, 2)
         self.assertEqual(inventory.restock_level, 3)
+        self.assertEqual(inventory.available, True)
 
     def test_deserialize_missing_data(self):
         """ Test deserialization of an Inventory with missing data """
         data = {
             "product_id": 1,
             "quantity": 2,
-            "restock_level": 3
+            "restock_level": 3,
         }
         inventory = Inventory()
         self.assertRaises(DataValidationError, inventory.deserialize, data)

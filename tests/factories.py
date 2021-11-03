@@ -32,3 +32,4 @@ class InventoryFactory(factory.Factory):
         choices=[Condition.NEW, Condition.OPEN_BOX, Condition.USED])
     quantity = factory.Sequence(lambda n: n)
     restock_level = factory.Sequence(lambda n: n)
+    available = FuzzyChoice(choices=[True, False])

@@ -43,6 +43,7 @@ class Inventory(db.Model):
     condition = db.Column(db.Enum(Condition), primary_key=True)
     quantity = db.Column(db.Integer, nullable=False)
     restock_level = db.Column(db.Integer, nullable=True)
+    available = db.Column(db.Boolean(), nullable=False, default=False)
 
     def __repr__(self):
         return f"<Inventory product_id=[{self.product_id}] with condition=[{self.condition}] condition>"
@@ -82,6 +83,7 @@ class Inventory(db.Model):
             "condition": self.condition.name,
             "quantity": self.quantity,
             "restock_level": self.restock_level,
+            "available": self.available
         }
 
     def deserialize(self, data):
@@ -95,7 +97,13 @@ class Inventory(db.Model):
             self.product_id = data["product_id"]
             self.condition = getattr(Condition, data["condition"])
             self.quantity = data["quantity"]
-            self.restock_level = data["restock_level"]
+            if "restock_level" in data and isinstance(data["restock_level"], int):
+                self.restock_level = data["restock_level"]
+            if isinstance(data["available"], bool):
+                self.available = data["available"]
+            else:
+                raise DataValidationError(
+                    "Invalid type for boolean [available]: " + type(data["available"]))
         except AttributeError as error:
             raise DataValidationError("Invalid attribute: " + error.args[0])
         except KeyError as error:
@@ -125,33 +133,40 @@ class Inventory(db.Model):
 
     @classmethod
     def find_by_product_id(cls, product_id: int):
-        """ Finds Inventory by product ID """
+        """ Find Inventory by product ID """
         logger.info("Processing lookup for id %s ...", product_id)
         return cls.query.filter(cls.product_id == product_id).all()
 
     @classmethod
     def find_by_condition(cls, condition: Condition):
-        """ Returns Inventory by condition """
+        """ Return Inventory by condition """
         logger.info("Processing lookup for condition %s ...", condition)
         return cls.query.filter(cls.condition == condition).all()
 
     @classmethod
     def find_by_product_id_condition(cls, product_id: int, condition: Condition):
-        """ Finds an Inventory record by product_id and condition """
+        """ Find an Inventory record by product_id and condition """
         logger.info(
             "Processing lookup for product_id %s and condition %s ...", product_id, condition)
         return cls.query.get((product_id, condition))
 
     @classmethod
     def find_by_quantity(cls, quantity: int):
-        """ Returns Inventory by quantity """
+        """ Return Inventory by quantity """
         logger.info("Processing lookup for quantity %s ...",
                     quantity)
         return cls.query.filter(cls.quantity == quantity).all()
 
     @classmethod
     def find_by_restock_level(cls, restock_level: int):
-        """ Returns Inventory by restock_level """
+        """ Return Inventory by restock_level """
         logger.info("Processing lookup for restock_level %s ...",
                     restock_level)
         return cls.query.filter(cls.restock_level == restock_level).all()
+
+    @classmethod
+    def find_by_availability(cls, available: bool = True):
+        """ Return Inventory by available """
+        logger.info("Processing lookup for available %s ...",
+                    available)
+        return cls.query.filter(cls.available == available).all()
