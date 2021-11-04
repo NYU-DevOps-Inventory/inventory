@@ -45,10 +45,11 @@ from flask import Flask, abort, jsonify, make_response, request, url_for
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
 # variety of backends including SQLite, MySQL, and PostgreSQL
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm.query import Query
 from werkzeug.exceptions import NotFound
 
 from service.constants import (AVAILABLE, CONDITION, PRODUCT_ID, QUANTITY,
-                               RESTOCK_LEVEL)
+                               QUANTITY_HIGH, QUANTITY_LOW, RESTOCK_LEVEL)
 from service.error_handlers import bad_request, not_found
 from service.models import Condition, DataValidationError, Inventory
 
@@ -93,6 +94,10 @@ def list_inventory():
     elif QUANTITY in params:
         quantity: int = params[QUANTITY]
         inventories = Inventory.find_by_quantity(quantity)
+    elif QUANTITY_HIGH in params and QUANTITY_LOW in params:
+        lowerbound: int = params[QUANTITY_LOW]
+        upperbound: int = params[QUANTITY_HIGH]
+        inventories = Inventory.find_by_quantity_range(lowerbound, upperbound)
     elif RESTOCK_LEVEL in params:
         restock_level: int = params[RESTOCK_LEVEL]
         # if restock_level == 0, we should still execute the query

@@ -158,6 +158,13 @@ class Inventory(db.Model):
         return cls.query.filter(cls.quantity == quantity).all()
 
     @classmethod
+    def find_by_quantity_range(cls, lowerbound: int, upperbound: int):
+        """ Return Inventory by quantity range """
+        logger.info(
+            "Processing lookup for quantity range [ %s : %s ] ...", lowerbound, upperbound)
+        return cls.query.filter(cls.quantity >= lowerbound, cls.quantity <= upperbound).all()
+
+    @classmethod
     def find_by_restock_level(cls, restock_level: int):
         """ Return Inventory by restock_level """
         logger.info("Processing lookup for restock_level %s ...",

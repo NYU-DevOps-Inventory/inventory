@@ -45,10 +45,10 @@ import logging
 import os
 import unittest
 
-from werkzeug.exceptions import NotFound
-
 from service import app
 from service.models import Condition, DataValidationError, Inventory, db
+from werkzeug.exceptions import NotFound
+
 from tests.factories import InventoryFactory
 
 DATABASE_URI = os.getenv(
@@ -202,14 +202,33 @@ class TestInventoryModel(unittest.TestCase):
             product_id=344, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
         if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
-            inventory = Inventory(
-                product_id=345, condition=Condition.NEW, quantity=2, restock_level=5, available=True)
+        inventory = Inventory(
+            product_id=345, condition=Condition.NEW, quantity=2, restock_level=5, available=True)
         if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
             inventory.create()
         inventories = Inventory.find_by_quantity(1)
         self.assertEqual(len(list(inventories)), 2)
         inventories = Inventory.find_by_quantity(2)
         self.assertEqual(len(list(inventories)), 1)
+
+    def test_find_by_quantity_range(self):
+        """ Find Inventory by [quantity range] """
+        inventory = Inventory(
+            product_id=333, condition=Condition.NEW, quantity=2, restock_level=10, available=True)
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=344, condition=Condition.NEW, quantity=3, restock_level=10, available=True)
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventory = Inventory(
+            product_id=345, condition=Condition.NEW, quantity=5, restock_level=5, available=True)
+        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            inventory.create()
+        inventories = Inventory.find_by_quantity_range(2, 6)
+        self.assertEqual(len(list(inventories)), 3)
+        inventories = Inventory.find_by_quantity_range(6, 10)
+        self.assertEqual(len(list(inventories)), 0)
 
     def test_find_by_restock_level(self):
         """ Find an Inventory by [restock_level] """

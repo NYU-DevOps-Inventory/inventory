@@ -45,6 +45,7 @@ While debugging just these tests it's convinient to use this:
 
 import logging
 import os
+import sys
 import unittest
 from typing import Dict, List, Optional
 from urllib.parse import quote_plus
@@ -237,6 +238,17 @@ class TestInventoryServer(unittest.TestCase):
             count += len(resp.get_json())
         self.assertEqual(count, N)
 
+    def test_get_inventory_by_query_quantity_range(self):
+        """ Get a list of Inventory by query [quantity range] """
+        N = 5
+        inventories: List[Inventory] = self._create_inventories(N)
+        lowerbound = min(inv.quantity for inv in inventories)
+        upperbound = max(inv.quantity for inv in inventories)
+        resp = self.app.get(
+            f"{BASE_URL}?quantity_low={lowerbound}&quantity_high={upperbound}", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(N, len(resp.get_json()))
+
     def test_get_inventory_by_query_restock_level(self):
         """ Get a list of Inventory by query [restock_level] """
         N = 5
@@ -275,6 +287,8 @@ class TestInventoryServer(unittest.TestCase):
         resp = self.app.get("/inventory?condition=USED")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
         resp = self.app.get("/inventory?quantity=0")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+        resp = self.app.get("/inventory?quantity_low=0&quantity_high=0")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
         resp = self.app.get("/inventory?restock_level=0")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
