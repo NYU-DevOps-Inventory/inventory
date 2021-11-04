@@ -256,7 +256,7 @@ class TestInventoryServer(unittest.TestCase):
         inventories: List[Inventory] = self._create_inventories(5)
         for inv in inventories:
             count[inv.available] += 1
-        for available in {True, False}:
+        for available in [True, False]:
             resp = self.app.get(f"{BASE_URL}?available={available}",
                                 content_type="application/json")
             data = resp.get_json()
