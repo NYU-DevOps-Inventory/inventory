@@ -244,9 +244,8 @@ class TestInventoryServer(unittest.TestCase):
         lowerbound = sys.maxsize
         upperbound = -sys.maxsize - 1
         inventories: List[Inventory] = self._create_inventories(N)
-        for inv in inventories:
-            lowerbound = min(lowerbound, inv.quantity)
-            upperbound = max(upperbound, inv.quantity)
+        lowerbound = min(inv.quantity for inv in inventories)
+        upperbound = max(inv.quantity for inv in inventories)
         resp = self.app.get(
             f"{BASE_URL}?quantity_low={lowerbound}&quantity_high={upperbound}", content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
