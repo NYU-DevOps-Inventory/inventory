@@ -241,8 +241,6 @@ class TestInventoryServer(unittest.TestCase):
     def test_get_inventory_by_query_quantity_range(self):
         """ Get a list of Inventory by query [quantity range] """
         N = 5
-        lowerbound = sys.maxsize
-        upperbound = -sys.maxsize - 1
         inventories: List[Inventory] = self._create_inventories(N)
         lowerbound = min(inv.quantity for inv in inventories)
         upperbound = max(inv.quantity for inv in inventories)
