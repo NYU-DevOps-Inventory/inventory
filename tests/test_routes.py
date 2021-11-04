@@ -256,14 +256,17 @@ class TestInventoryServer(unittest.TestCase):
         inventories: List[Inventory] = self._create_inventories(5)
         for inv in inventories:
             count[inv.available] += 1
-        resp = self.app.get(f"{BASE_URL}?available=True",
-                            content_type="application/json")
-        data = resp.get_json()
-        self.assertEqual(len(data), count[True])
-        resp = self.app.get(f"{BASE_URL}?available=False",
-                            content_type="application/json")
-        data = resp.get_json()
-        self.assertEqual(len(data), count[False])
+        for available in [True, False]:
+            resp = self.app.get(f"{BASE_URL}?available={available}",
+                                content_type="application/json")
+            data = resp.get_json()
+            if isinstance(data, dict):
+                error: Optional[str] = data["error"]
+                if error:
+                    self.assertEqual(resp.status_code,
+                                     status.HTTP_404_NOT_FOUND)
+            else:  # type(data) == list
+                self.assertEqual(len(data), count[available])
 
     def test_get_inventory_by_query_not_found(self):
         """ Get a list of Inventory by every attributes that not found """
