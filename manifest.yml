@@ -3,8 +3,8 @@
 applications:
   - name: nyu-devops-inventory
     path: .
-    instances: 2
-    memory: 64M
+    instances: 1
+    memory: 128M
     routes:
       - route: nyu-devops-inventory.us-south.cf.appdomain.cloud
     disk_quota: 1024M
@@ -12,7 +12,7 @@ applications:
       - python_buildpack
     timeout: 180
     services:
-      # - Cloudant
+      - ElephantSQL
     env:
       FLASK_APP: service:app
       FLASK_DEBUG: false
