@@ -1,5 +1,8 @@
 # NYU-DevOps-Inventory/inventory
 
+[![Build Status](https://github.com/NYU-DevOps-Inventory/inventory/actions/workflows/workflow.yml/badge.svg)](https://github.com/NYU-DevOps-Inventory/inventory/actions/workflows/workflow.yml)
+[![codecov](https://codecov.io/gh/NYU-DevOps-Inventory/inventory/branch/main/graph/badge.svg?token=KRF89G3MKC)](https://codecov.io/gh/NYU-DevOps-Inventory/inventory)
+
 ## Get Started
 
 This repository is a project of NYU course **CSCI-GA.2820: DevOps and Agile Methodologies** taught by John Rofrano, Adjunct Instructor, NYU Courant Institute, Graduate Division, Computer Science, in **Fall 2021** semester.
