@@ -48,8 +48,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.query import Query
 from werkzeug.exceptions import NotFound
 
-from service.constants import (AVAILABLE, CONDITION, PRODUCT_ID, QUANTITY,
-                               QUANTITY_HIGH, QUANTITY_LOW, RESTOCK_LEVEL)
+from service.constants import (ADDED_AMOUNT, AVAILABLE, CONDITION, PRODUCT_ID,
+                               QUANTITY, QUANTITY_HIGH, QUANTITY_LOW,
+                               RESTOCK_LEVEL)
 from service.error_handlers import bad_request, not_found
 from service.models import Condition, DataValidationError, Inventory
 
@@ -206,9 +207,26 @@ def update_inventory(product_id, condition):
     if not inventory:
         raise NotFound("Inventory with product '{}' of condition '{}' was not found".format(
             product_id, condition))
-    inventory.deserialize(request.get_json())
-    inventory.product_id = product_id
-    inventory.condition = condition
+    params = request.get_json()
+    if QUANTITY in params.keys() and ADDED_AMOUNT in params.keys():
+        return bad_request("Ambiguous request with both QUANTITY and ADDED_AMOUNT")
+    if QUANTITY in params.keys():
+        quantity = params[QUANTITY]
+        if not isinstance(quantity, int) or quantity <= 0:
+            return bad_request("Quantity must be positive integer")
+        inventory.quantity = quantity
+    if ADDED_AMOUNT in params.keys():
+        added_amount = params[ADDED_AMOUNT]
+        if not isinstance(added_amount, int) or added_amount <= 0:
+            return bad_request("Quantity must be positive integer")
+        inventory.quantity += added_amount
+    if RESTOCK_LEVEL in params.keys():
+        if condition != "NEW":
+            return bad_request("Restock level only makes sense to NEW products")
+        restock_level = params[RESTOCK_LEVEL]
+        if not isinstance(restock_level, int) or restock_level <= 0:
+            return bad_request("Restock level must be positive integer")
+        inventory.restock_level = restock_level
     inventory.update()
     app.logger.info(
         "Inventory of product %s of condition %s updated.", product_id, condition)
