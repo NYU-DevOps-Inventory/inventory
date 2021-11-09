@@ -373,12 +373,9 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         # update quantity and restock_level
-        params = {}
-        params[QUANTITY] = 1000
-        params[RESTOCK_LEVEL] = 400
         resp = self.app.put("/inventory/{}/condition/{}".format(
             inventory.product_id, inventory.condition.name),
-            json=params,
+            json={QUANTITY: 1000, RESTOCK_LEVEL: 400},
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -386,11 +383,9 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(updated_inventory[QUANTITY], 1000)
         self.assertEqual(updated_inventory[RESTOCK_LEVEL], 400)
         # update quantity by added_amount
-        params = {}
-        params[ADDED_AMOUNT] = 500
         resp = self.app.put("/inventory/{}/condition/{}".format(
             inventory.product_id, inventory.condition.name),
-            json=params,
+            json={ADDED_AMOUNT: 500},
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -399,43 +394,34 @@ class TestInventoryServer(unittest.TestCase):
         # update bad quantity
         bad_quantities = [-100, 200.5]
         for bq in bad_quantities:
-            params = {}
-            params[QUANTITY] = bq
             resp = self.app.put("/inventory/{}/condition/{}".format(
                 inventory.product_id, inventory.condition.name),
-                json=params,
+                json={QUANTITY: bq},
                 content_type="application/json",
             )
             self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         # update bad restock_level
         bad_request_levels = [-100, 200.5]
         for brl in bad_request_levels:
-            params = {}
-            params[RESTOCK_LEVEL] = brl
             resp = self.app.put("/inventory/{}/condition/{}".format(
                 inventory.product_id, inventory.condition.name),
-                json=params,
+                json={RESTOCK_LEVEL: brl},
                 content_type="application/json",
             )
             self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         # update bad added_amount
         bad_added_amounts = [-100, 200.5]
         for baa in bad_added_amounts:
-            params = {}
-            params[ADDED_AMOUNT] = baa
             resp = self.app.put("/inventory/{}/condition/{}".format(
                 inventory.product_id, inventory.condition.name),
-                json=params,
+                json={ADDED_AMOUNT: baa},
                 content_type="application/json",
             )
             self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
         # update with both quantity and added_amount
-        params = {}
-        params[QUANTITY] = 1000
-        params[ADDED_AMOUNT] = 500
         resp = self.app.put("/inventory/{}/condition/{}".format(
             inventory.product_id, inventory.condition.name),
-            json=params,
+            json={QUANTITY: 1000, ADDED_AMOUNT: 500},
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -450,11 +436,9 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         # update the record
-        params = {}
-        params[RESTOCK_LEVEL] = 400
         resp = self.app.put("/inventory/{}/condition/{}".format(
             inventory.product_id, inventory.condition.name),
-            json=params,
+            json={RESTOCK_LEVEL: 400},
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -504,11 +488,9 @@ class TestInventoryServer(unittest.TestCase):
     def test_update_non_exist_inventory(self):
         """Update a non-existing record in Inventory"""
         # update a record
-        params = {}
-        params[QUANTITY] = 500
         resp = self.app.put(
             "/inventory/{}/condition/{}".format(100, "NEW"),
-            json=params,
+            json={QUANTITY: 500},
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
