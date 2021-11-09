@@ -64,7 +64,7 @@ Vagrant.configure(2) do |config|
     "~/.gitconfig", # make your git credentials correct
     "~/.ssh/github", # make your git credentials work
     "~/.vimrc", # make vi/vim look the same
-    "~/.bluemix/apiKey.json" # IBM Cloud API Key
+    "~/.bluemix/apikey.json" # IBM Cloud API Key
   ]
 
   config_paths.each { |config_path|
