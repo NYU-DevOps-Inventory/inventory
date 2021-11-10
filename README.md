@@ -22,17 +22,30 @@ This project is the back-end for an eCommerce website as a RESTful microservice 
 ## File Structure
 
 ```
+.
+├── Procfile
+├── README.md
+├── Vagrantfile
+├── config.py
+├── coverage.xml
+├── manifest.yml
+├── requirements.txt
+├── runtime.txt
 ├── service
-│   ├── __init__.py        - package initializer
-│   ├── error_handlers.py  - http error codes
-│   ├── models.py          - module with main database models
-│   ├── routes.py          - module with service routes
-│   └── status.py          - http status codes
+│   ├── __init__.py             - package initializer
+│   ├── constants.py            - constansts of the app
+│   ├── error_handlers.py       - http error codes
+│   ├── models.py               - module with main database models
+│   ├── routes.py               - module with service routes
+│   └── status.py               - http status codes
+├── setup.cfg
 ├── tests
-│   ├── __init__.py        - package initializer
-│   ├── factory_test.py    - factory to fake customer data
-│   ├── test_models.py     - test suite for models.py
-│   └── test_service.py    - test suite for routes.py
+│   ├── __init__.py             - package initializer
+│   ├── factories.py            - factory to fake inventory data
+│   ├── test_error_handlers.py  - test suite for error_handlers.py
+│   ├── test_models.py          - test suite for models.py
+│   └── test_routes.py          - test suite for routes.py
+└── unittests.xml
 ```
 
 ## Database Schema
@@ -45,12 +58,13 @@ This project is the back-end for an eCommerce website as a RESTful microservice 
 
 ### `Inventory` Model
 
-| Field           | Type    | Description             | Primary Key | Nullable |
-| :-------------- | :------ | :---------------------- | :---------: | :------: |
-| `product_id`    | Integer | Product's ID            |     Yes     |    No    |
-| `condition`     | Enum    | Inventory's condition   |     Yes     |    No    |
-| `quantity`      | Integer | Inventory's quantity    |     No      |    No    |
-| `restock_level` | Integer | Product's restock level |     No      |   Yes    |
+| Field           | Type    | Description              | Primary Key | Nullable |
+| :-------------- | :------ | :----------------------- | :---------: | :------: |
+| `product_id`    | Integer | Product's ID             |     Yes     |    No    |
+| `condition`     | Enum    | Inventory's condition    |     Yes     |    No    |
+| `quantity`      | Integer | Inventory's quantity     |     No      |    No    |
+| `restock_level` | Integer | Product's restock level  |     No      |   Yes    |
+| `available`     | Boolean | Inventory's availability |     No      |    No    |
 
 ## Run the Service on Your Local PC
 
@@ -68,6 +82,8 @@ $ cd inventory
 $ vagrant up
 $ vagrant ssh
 $ cd /vagrant
+# Type one of the following tow commands to run the app
+$ honcho start
 $ FLASK_APP=service:app flask run -h 0.0.0.0
 ```
 
@@ -110,12 +126,49 @@ $ vagrant destroy
 
 ## APIs
 
-For simplicity, note the type of `product_id` is `integer` and the type of `condition` is `string`.
+Note the type of `product_id` is `integer` and the type of `condition` is `string`.
 
-| Method   | URL                                           | Operation                                                        |
-| :------- | :-------------------------------------------- | :--------------------------------------------------------------- |
-| `GET`    | `/inventory`                                  | Return a list of all the inventory                               |
-| `GET`    | `/inventory/:product_id/condition/:condition` | Return the Inventory with the given `product_id` and `condition` |
-| `POST`   | `/inventory`                                  | Create a new Inventory record in the database                    |
-| `PUT`    | `/inventory/:product_id/condition/:condition` | Update the Inventory with the given `product_id` and `condition` |
-| `DELETE` | `/inventory/:product_id/condition/:condition` | Delete the Inventory with the given `product_id` and `condition` |
+For simplicity, we omit the types in the following table.
+
+| Method   | URL                                                      | Operation                                                            |
+| :------- | :------------------------------------------------------- | :------------------------------------------------------------------- |
+| `GET`    | `/inventory`                                             | Return a list of all the inventory                                   |
+| `GET`    | `/inventory/:product_id/condition/:condition`            | Return the Inventory with the given `product_id` and `condition`     |
+| `POST`   | `/inventory`                                             | Create a new Inventory record in the database                        |
+| `PUT`    | `/inventory/:product_id/condition/:condition`            | Update the Inventory with the given `product_id` and `condition`     |
+| `PUT`    | `/inventory/:product_id/condition/:condition/activate`   | Activate the Inventory with the given `product_id` and `condition`   |
+| `PUT`    | `/inventory/:product_id/condition/:condition/deactivate` | Deactivate the Inventory with the given `product_id` and `condition` |
+| `DELETE` | `/inventory/:product_id/condition/:condition`            | Delete the Inventory with the given `product_id` and `condition`     |
+
+In `POST`, the request body should be:
+
+```json
+{
+  "product_id": Integer!,
+  "quantity": Integer!,
+  "condition": String!, // will convert to Enum in code
+  "restock_level": Integer?,
+  "available": Boolean!,
+}
+```
+
+In `PUT`, the allowed keys in request body are:
+
+```json
+{
+  // Update the inventory's quantity
+  "quantity": Integer,
+
+  // Increase the inventory's quantity
+  "added_amount": Integer,
+
+  // Update the inventory's restock_level (its condition must be Condition.NEW)
+  "restock_level": Integer,
+}
+```
+
+## Deployment
+
+We also deploy our app by IBM Cloud Foundry.
+
+Link: https://nyu-devops-inventory.us-south.cf.appdomain.cloud
