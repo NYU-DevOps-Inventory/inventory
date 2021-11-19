@@ -447,17 +447,14 @@ class TestInventoryServer(unittest.TestCase):
         """Activate an existing record in Inventory"""
         inventory = InventoryFactory()
         inventory.available = False
+        json = inventory.serialize()
         resp = self.app.post(
-            BASE_URL, json=inventory.serialize(), content_type="application/json"
+            BASE_URL, json=json, content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         # update the record
-        new_inventory = resp.get_json()
-        self.assertEqual(new_inventory["available"], False)
-        logging.debug(new_inventory)
         resp = self.app.put("/inventory/{}/condition/{}/activate".format(
-            new_inventory["product_id"], new_inventory["condition"]),
-            json=new_inventory,
+            json["product_id"], json["condition"]),
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -468,17 +465,14 @@ class TestInventoryServer(unittest.TestCase):
         """Deactivate an existing record in Inventory"""
         inventory = InventoryFactory()
         inventory.available = True
+        json = inventory.serialize()
         resp = self.app.post(
-            BASE_URL, json=inventory.serialize(), content_type="application/json"
+            BASE_URL, json=json, content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         # update the record
-        new_inventory = resp.get_json()
-        self.assertEqual(new_inventory["available"], True)
-        logging.debug(new_inventory)
         resp = self.app.put("/inventory/{}/condition/{}/deactivate".format(
-            new_inventory["product_id"], new_inventory["condition"]),
-            json=new_inventory,
+            json["product_id"], json["condition"]),
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
