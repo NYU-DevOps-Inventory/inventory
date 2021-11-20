@@ -183,8 +183,6 @@ class TestInventoryServer(unittest.TestCase):
         """ Test the Home Page """
         resp = self.app.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-        self.assertEqual(data["name"], "Inventory REST API Service")
 
     def test_get_inventory_list(self):
         """ Get a list of Inventory """
@@ -249,6 +247,14 @@ class TestInventoryServer(unittest.TestCase):
             f"{BASE_URL}?quantity_low={lowerbound}&quantity_high={upperbound}", content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(N, len(resp.get_json()))
+        resp = self.app.get(
+            f"{BASE_URL}?quantity_low={lowerbound}", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(N, len(resp.get_json()))
+        resp = self.app.get(
+            f"{BASE_URL}?quantity_high={upperbound}", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(N, len(resp.get_json()))
 
     def test_get_inventory_by_query_restock_level(self):
         """ Get a list of Inventory by query [restock_level] """
@@ -280,21 +286,6 @@ class TestInventoryServer(unittest.TestCase):
                                      status.HTTP_404_NOT_FOUND)
             else:  # type(data) == list
                 self.assertEqual(len(data), count[available])
-
-    def test_get_inventory_by_query_not_found(self):
-        """ Get a list of Inventory by every attributes that not found """
-        resp = self.app.get("/inventory?product_id=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?condition=USED")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?quantity=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?quantity_low=0&quantity_high=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?restock_level=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?available=True")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_bad_request(self):
         """ Get a list of Inventory that bad request """

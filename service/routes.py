@@ -36,6 +36,7 @@ DELETE /inventory/{int:product_id}/condition/{string:condition}
     - Delete the Inventory with the given product_id and condition
 """
 
+import sys
 from typing import Dict, Union
 
 from flask import abort, jsonify, make_response, request, url_for
@@ -90,23 +91,35 @@ def list_inventory():
     if PRODUCT_ID in params:
         product_id: int = params[PRODUCT_ID]
         finds = Inventory.find_by_product_id(product_id)
-        inventories = list(set(inventories) & set(finds))
+        if len(inventories) == 0:
+            inventories = finds
+        else:
+            inventories = list(set(inventories) & set(finds))
         params.pop(PRODUCT_ID, None)
     if CONDITION in params:
         condition: str = params[CONDITION]
         finds = Inventory.find_by_condition(Condition[condition])
-        inventories = list(set(inventories) & set(finds))
+        if len(inventories) == 0:
+            inventories = finds
+        else:
+            inventories = list(set(inventories) & set(finds))
         params.pop(CONDITION, None)
     if QUANTITY in params:
         quantity: int = params[QUANTITY]
         finds = Inventory.find_by_quantity(quantity)
-        inventories = list(set(inventories) & set(finds))
+        if len(inventories) == 0:
+            inventories = finds
+        else:
+            inventories = list(set(inventories) & set(finds))
         params.pop(QUANTITY, None)
     if QUANTITY_HIGH in params or QUANTITY_LOW in params:
         lowerbound: int = params[QUANTITY_LOW] if QUANTITY_LOW in params else 0
         upperbound: int = params[QUANTITY_HIGH] if QUANTITY_HIGH in params else sys.maxsize
         finds = Inventory.find_by_quantity_range(lowerbound, upperbound)
-        inventories = list(set(inventories) & set(finds))
+        if len(inventories) == 0:
+            inventories = finds
+        else:
+            inventories = list(set(inventories) & set(finds))
         params.pop(QUANTITY_HIGH, None)
         params.pop(QUANTITY_LOW, None)
     if RESTOCK_LEVEL in params:
@@ -114,7 +127,10 @@ def list_inventory():
         # if restock_level == 0, we should still execute the query
         if restock_level is not None:
             finds = Inventory.find_by_restock_level(restock_level)
-            inventories = list(set(inventories) & set(finds))
+            if len(inventories) == 0:
+                inventories = finds
+            else:
+                inventories = list(set(inventories) & set(finds))
             params.pop(RESTOCK_LEVEL, None)
     if len(params) != 0:
         return bad_request("Invalid request parameters")
@@ -217,19 +233,19 @@ def update_inventory(product_id, condition):
             product_id, condition))
     params = request.get_json()
     app.logger.info(params)
-    if params[QUANTITY] and params[ADDED_AMOUNT]:
+    if QUANTITY in params.keys() and params[QUANTITY] and ADDED_AMOUNT in params.keys() and params[ADDED_AMOUNT]:
         return bad_request("Ambiguous request with both QUANTITY and ADDED_AMOUNT")
-    if params[QUANTITY]:
+    if QUANTITY in params.keys() and params[QUANTITY]:
         quantity = params[QUANTITY]
         if not isinstance(quantity, int) or quantity <= 0:
             return bad_request("Quantity must be positive integer")
         inventory.quantity = quantity
-    if params[ADDED_AMOUNT]:
+    if ADDED_AMOUNT in params.keys() and params[ADDED_AMOUNT]:
         added_amount = params[ADDED_AMOUNT]
         if not isinstance(added_amount, int) or added_amount <= 0:
             return bad_request("Quantity must be positive integer")
         inventory.quantity += added_amount
-    if params[RESTOCK_LEVEL]:
+    if RESTOCK_LEVEL in params.keys() and params[RESTOCK_LEVEL]:
         if condition != "NEW":
             return bad_request("Restock level only makes sense to NEW products")
         restock_level = params[RESTOCK_LEVEL]
