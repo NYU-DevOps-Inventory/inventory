@@ -83,7 +83,7 @@ def list_inventory():
     # TODO: Avoid using list intersection for more efficency
     # TODO: Unit test intersection function
     inventories = []
-    # Actually this condition will always be true
+    # Actually this condition will always be true in real use cases
     if AVAILABLE in params:
         available: bool = params[AVAILABLE]
         inventories = Inventory.find_by_availability(available)
