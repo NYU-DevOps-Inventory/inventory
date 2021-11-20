@@ -118,7 +118,6 @@ class TestInventoryServer(unittest.TestCase):
     def test_create_inventory(self):
         """ Create a new inventory """
         test_inventory = InventoryFactory()
-        logging.debug(test_inventory)
         resp = self.app.post(
             BASE_URL, json=test_inventory.serialize(), content_type="application/json"
         )
@@ -153,6 +152,19 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(
             new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
         )
+
+    def test_create_inventory_already_exist(self):
+        """ Create an inventory already exists """
+        test_inventory = InventoryFactory()
+        resp = self.app.post(
+            BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # Post again
+        resp = self.app.post(
+            BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_inventory_no_data(self):
         """ Create an inventory with missing data """
@@ -553,5 +565,29 @@ class TestInventoryServer(unittest.TestCase):
         test_inventory = InventoryFactory()
         data = test_inventory.serialize()
         data["condition"] = 'new'  # wrong case
+        inventory = Inventory()
+        self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    def test_deserialize_bad_quantity(self):
+        """ Test deserialization of data with bad quantity """
+        test_inventory = InventoryFactory()
+        data = test_inventory.serialize()
+        data["quantity"] = 'string'  # wrong type
+        inventory = Inventory()
+        self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    def test_deserialize_bad_restock_level(self):
+        """ Test deserialization of data with bad restock_level """
+        test_inventory = InventoryFactory()
+        data = test_inventory.serialize()
+        data["restock_level"] = 'string'  # wrong type
+        inventory = Inventory()
+        self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    def test_deserialize_bad_available(self):
+        """ Test deserialization of data with bad available """
+        test_inventory = InventoryFactory()
+        data = test_inventory.serialize()
+        data["available"] = 'string'  # wrong type
         inventory = Inventory()
         self.assertRaises(DataValidationError, inventory.deserialize, data)

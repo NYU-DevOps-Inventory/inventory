@@ -81,6 +81,7 @@ def list_inventory():
         return make_response(jsonify(results), status.HTTP_200_OK)
 
     # TODO: Avoid using list intersection for more efficency
+    # TODO: Unit test intersection function
     inventories = []
     # Actually this condition will always be true
     if AVAILABLE in params:

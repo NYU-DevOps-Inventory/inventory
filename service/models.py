@@ -102,8 +102,12 @@ class Inventory(db.Model):
             else:
                 raise DataValidationError(
                     "Invalid type for int [quantity]: " + type(data["quantity"]))
-            if "restock_level" in data and isinstance(data["restock_level"], int):
-                self.restock_level = data["restock_level"]
+            if "restock_level" in data:
+                if isinstance(data["restock_level"], int):
+                    self.restock_level = data["restock_level"]
+                else:
+                    raise DataValidationError(
+                        "Invalid type for int [restock_level]: " + type(data["restock_level"]))
             if isinstance(data["available"], bool):
                 self.available = data["available"]
             else:
