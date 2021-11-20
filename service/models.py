@@ -97,6 +97,11 @@ class Inventory(db.Model):
             self.product_id = data["product_id"]
             self.condition = getattr(Condition, data["condition"])
             self.quantity = data["quantity"]
+            if isinstance(data["quantity"], int):
+                self.quantity = data["quantity"]
+            else:
+                raise DataValidationError(
+                    "Invalid type for int [quantity]: " + type(data["quantity"]))
             if "restock_level" in data and isinstance(data["restock_level"], int):
                 self.restock_level = data["restock_level"]
             if isinstance(data["available"], bool):

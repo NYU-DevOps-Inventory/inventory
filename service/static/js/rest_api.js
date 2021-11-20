@@ -17,11 +17,12 @@ $(function () {
         }
     }
 
-    /// Clears all form fields
+    // Clears all form fields
     function clear_form_data() {
         $("#restock_level").val("");
         $("#quantity").val("");
-        $("#available").val("");
+        $("#quantity_low").val("");
+        $("#quantity_high").val("");
     }
 
     // Updates the flash message area
@@ -40,6 +41,14 @@ $(function () {
         var restock_level = $("#restock_level").val();
         var quantity = $("#quantity").val();
         var available = $("#available").val() == "true";
+
+        // Convert input type
+        if (!isNaN(quantity)) {
+            quantity = parseInt(quantity)
+        }
+        if (!isNaN(restock_level)) {
+            restock_level = parseInt(restock_level)
+        }
 
         var data = {
             "product_id": product_id,
@@ -152,7 +161,7 @@ $(function () {
 
         ajax.done(function (res) {
             clear_form_data()
-            flash_message("Pet has been Deleted!")
+            flash_message("Inventory has been Deleted!")
         });
 
         ajax.fail(function (res) {
@@ -179,29 +188,57 @@ $(function () {
         var product_id = $("#product_id").val();
         var condition = $("#condition").val();
         var quantity = $("#quantity").val();
+        var quantity_low = $("#quantity_low").val();
+        var quantity_high = $("#quantity_high").val();
         var restock_level = $("#restock_level").val();
         var available = $("#available").val() == "true";
 
         var queryString = ""
 
+        // TODO: Refactor these if else block
         if (product_id) {
             queryString += 'product_id=' + product_id
         }
         if (condition) {
-            queryString += 'condition=' + condition
+            if (queryString.length > 0) {
+                queryString += '&condition=' + condition
+            } else {
+                queryString += 'condition=' + condition
+            }
         }
         if (quantity) {
-            queryString += 'quantity=' + quantity
+            if (queryString.length > 0) {
+                queryString += '&quantity=' + quantity
+            } else {
+                queryString += 'quantity=' + quantity
+            }
         }
         if (restock_level) {
-            queryString += 'restock_level=' + restock_level
-        }
-        if (available) {
             if (queryString.length > 0) {
-                queryString += '&available=' + available
+                queryString += '&restock_level=' + restock_level
             } else {
-                queryString += 'available=' + available
+                queryString += 'restock_level=' + restock_level
             }
+        }
+        if (quantity_low) {
+            if (queryString.length > 0) {
+                queryString += '&quantity_low=' + quantity_low
+            } else {
+                queryString += 'quantity_low=' + quantity_low
+            }
+        }
+        if (quantity_high) {
+            if (queryString.length > 0) {
+                queryString += '&quantity_high=' + quantity_high
+            } else {
+                queryString += 'quantity_high=' + quantity_high
+            }
+        }
+        // available
+        if (queryString.length > 0) {
+            queryString += '&available=' + available
+        } else {
+            queryString += 'available=' + available
         }
 
         var ajax = $.ajax({
@@ -219,7 +256,7 @@ $(function () {
             header += '<th style="width:10%">Product_ID</th>'
             header += '<th style="width:30%">Condition</th>'
             header += '<th style="width:30%">Quantity</th>'
-            header += '<th style="width:30%">Restock Level</th></tr>'
+            header += '<th style="width:30%">Restock Level</th>'
             header += '<th style="width:10%">Available</th></tr>'
             $("#search_results").append(header);
             var firstInventory = "";
@@ -237,6 +274,8 @@ $(function () {
             // copy the first result to the form
             if (firstInventory != "") {
                 update_form_data(firstInventory)
+            } else {
+                $("#search_results").append("No matched results.")
             }
 
             flash_message("Success")

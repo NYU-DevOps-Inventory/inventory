@@ -88,9 +88,9 @@ def list_inventory():
     elif QUANTITY in params:
         quantity: int = params[QUANTITY]
         inventories = Inventory.find_by_quantity(quantity)
-    elif QUANTITY_HIGH in params and QUANTITY_LOW in params:
-        lowerbound: int = params[QUANTITY_LOW]
-        upperbound: int = params[QUANTITY_HIGH]
+    elif QUANTITY_HIGH in params or QUANTITY_LOW in params:
+        lowerbound: int = params[QUANTITY_LOW] if QUANTITY_LOW in params else 0
+        upperbound: int = params[QUANTITY_HIGH] if QUANTITY_HIGH in params else sys.maxsize
         inventories = Inventory.find_by_quantity_range(lowerbound, upperbound)
     elif RESTOCK_LEVEL in params:
         restock_level: int = params[RESTOCK_LEVEL]
@@ -105,8 +105,6 @@ def list_inventory():
     else:
         inventories = Inventory.all()
     results = [inventory.serialize() for inventory in inventories]
-    if len(results) == 0:
-        return not_found("Inventory was not found")
     return make_response(jsonify(results), status.HTTP_200_OK)
 
 ######################################################################
@@ -124,6 +122,9 @@ def create_inventory():
     check_content_type("application/json")
     inventory = Inventory()
     inventory.deserialize(request.get_json())
+    # Prevent create invenotory with same primary key
+    if Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+        return bad_request("Product_id and condition already exist.")
     inventory.create()
     message = inventory.serialize()
     location_url = url_for(
