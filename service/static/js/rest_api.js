@@ -183,6 +183,64 @@ $(function () {
     });
 
     // ****************************************
+    // Activate an Inventory
+    // ****************************************
+
+    $("#activate-btn").click(function () {
+
+        var product_id = $("#product_id").val();
+        var condition = $("#condition").val();
+
+        var ajax = $.ajax({
+            type: "PUT",
+            url: "/inventory/" + product_id + "/condition/" + condition + "/activate",
+            contentType: "application/json",
+            data: ''
+        })
+
+        ajax.done(function (res) {
+            //alert(res.toSource())
+            update_form_data(res)
+            flash_message("Success")
+        });
+
+        ajax.fail(function (res) {
+            clear_form_data()
+            flash_message(res.responseJSON.message)
+        });
+
+    });
+
+    // ****************************************
+    // Deactivate an Inventory
+    // ****************************************
+
+    $("#deactivate-btn").click(function () {
+
+        var product_id = $("#product_id").val();
+        var condition = $("#condition").val();
+
+        var ajax = $.ajax({
+            type: "PUT",
+            url: "/inventory/" + product_id + "/condition/" + condition + "/deactivate",
+            contentType: "application/json",
+            data: ''
+        })
+
+        ajax.done(function (res) {
+            //alert(res.toSource())
+            update_form_data(res)
+            flash_message("Success")
+        });
+
+        ajax.fail(function (res) {
+            clear_form_data()
+            flash_message(res.responseJSON.message)
+        });
+
+    });
+
+    // ****************************************
     // Clear the form
     // ****************************************
 
