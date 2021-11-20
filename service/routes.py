@@ -36,23 +36,18 @@ DELETE /inventory/{int:product_id}/condition/{string:condition}
     - Delete the Inventory with the given product_id and condition
 """
 
-import logging
-import os
-import sys
 from typing import Dict, Union
 
-from flask import Flask, abort, jsonify, make_response, request, url_for
+from flask import abort, jsonify, make_response, request, url_for
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
 # variety of backends including SQLite, MySQL, and PostgreSQL
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm.query import Query
 from werkzeug.exceptions import NotFound
 
 from service.constants import (ADDED_AMOUNT, AVAILABLE, CONDITION, PRODUCT_ID,
                                QUANTITY, QUANTITY_HIGH, QUANTITY_LOW,
                                RESTOCK_LEVEL)
 from service.error_handlers import bad_request, not_found
-from service.models import Condition, DataValidationError, Inventory
+from service.models import Condition, Inventory
 
 from . import app  # Import Flask application
 from . import status  # HTTP Status Codes
@@ -237,13 +232,11 @@ def __toggle_inventory_available(product_id, condition, available):
     """ Update `available` of the inventory """
     app.logger.info("Request to update the inventory \
         with product_id {} and condition {}".format(product_id, condition))
-    inventory = Inventory.find_by_product_id_condition(product_id, condition)
+    inventory: Inventory = Inventory.find_by_product_id_condition(
+        product_id, condition)
     if not inventory:
         raise NotFound("Inventory with product '{}' of condition '{}' \
             was not found".format(product_id, condition))
-    inventory.deserialize(request.get_json())
-    inventory.product_id = product_id
-    inventory.condition = condition
     inventory.available = available
     inventory.update()
     app.logger.info(
