@@ -86,13 +86,26 @@ $(function () {
         var condition = $("#condition").val();
         var restock_level = $("#restock_level").val();
         var quantity = $("#quantity").val();
+        var added_amount = $("#added_amount").val();
         var available = $("#available").val() == "true";
+
+        // Convert input type
+        if (!isNaN(quantity)) {
+            quantity = parseInt(quantity)
+        }
+        if (!isNaN(added_amount)) {
+            added_amount = parseInt(added_amount)
+        }
+        if (!isNaN(restock_level)) {
+            restock_level = parseInt(restock_level)
+        }
 
         var data = {
             "product_id": product_id,
             "condition": condition,
             "quantity": quantity,
             "restock_level": restock_level,
+            "added_amount": added_amount,
             "available": available
         };
 

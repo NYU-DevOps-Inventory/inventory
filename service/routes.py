@@ -202,19 +202,20 @@ def update_inventory(product_id, condition):
         raise NotFound("Inventory with product '{}' of condition '{}' was not found".format(
             product_id, condition))
     params = request.get_json()
-    if QUANTITY in params.keys() and ADDED_AMOUNT in params.keys():
+    app.logger.info(params)
+    if params[QUANTITY] and params[ADDED_AMOUNT]:
         return bad_request("Ambiguous request with both QUANTITY and ADDED_AMOUNT")
-    if QUANTITY in params.keys():
+    if params[QUANTITY]:
         quantity = params[QUANTITY]
         if not isinstance(quantity, int) or quantity <= 0:
             return bad_request("Quantity must be positive integer")
         inventory.quantity = quantity
-    if ADDED_AMOUNT in params.keys():
+    if params[ADDED_AMOUNT]:
         added_amount = params[ADDED_AMOUNT]
         if not isinstance(added_amount, int) or added_amount <= 0:
             return bad_request("Quantity must be positive integer")
         inventory.quantity += added_amount
-    if RESTOCK_LEVEL in params.keys():
+    if params[RESTOCK_LEVEL]:
         if condition != "NEW":
             return bad_request("Restock level only makes sense to NEW products")
         restock_level = params[RESTOCK_LEVEL]
