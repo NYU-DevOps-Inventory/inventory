@@ -71,34 +71,53 @@ def index():
 def list_inventory():
     """ Return a list of the Inventory """
     app.logger.info("Request for inventory list")
-    params: Dict[str, Union[int, str]] = request.args
+    params: Dict[str, Union[int, str]] = request.args.to_dict()
     # message = "A GET request for all inventory"
+
+    if len(params) == 0:
+        inventories = Inventory.all()
+        results = [inventory.serialize() for inventory in inventories]
+        return make_response(jsonify(results), status.HTTP_200_OK)
+
+    # TODO: Avoid using list intersection for more efficency
+    inventories = []
+    # Actually this condition will always be true
+    if AVAILABLE in params:
+        available: bool = params[AVAILABLE]
+        inventories = Inventory.find_by_availability(available)
+        params.pop(AVAILABLE, None)
 
     if PRODUCT_ID in params:
         product_id: int = params[PRODUCT_ID]
-        inventories = Inventory.find_by_product_id(product_id)
-    elif CONDITION in params:
+        finds = Inventory.find_by_product_id(product_id)
+        inventories = list(set(inventories) & set(finds))
+        params.pop(PRODUCT_ID, None)
+    if CONDITION in params:
         condition: str = params[CONDITION]
-        inventories = Inventory.find_by_condition(Condition[condition])
-    elif QUANTITY in params:
+        finds = Inventory.find_by_condition(Condition[condition])
+        inventories = list(set(inventories) & set(finds))
+        params.pop(CONDITION, None)
+    if QUANTITY in params:
         quantity: int = params[QUANTITY]
-        inventories = Inventory.find_by_quantity(quantity)
-    elif QUANTITY_HIGH in params or QUANTITY_LOW in params:
+        finds = Inventory.find_by_quantity(quantity)
+        inventories = list(set(inventories) & set(finds))
+        params.pop(QUANTITY, None)
+    if QUANTITY_HIGH in params or QUANTITY_LOW in params:
         lowerbound: int = params[QUANTITY_LOW] if QUANTITY_LOW in params else 0
         upperbound: int = params[QUANTITY_HIGH] if QUANTITY_HIGH in params else sys.maxsize
-        inventories = Inventory.find_by_quantity_range(lowerbound, upperbound)
-    elif RESTOCK_LEVEL in params:
+        finds = Inventory.find_by_quantity_range(lowerbound, upperbound)
+        inventories = list(set(inventories) & set(finds))
+        params.pop(QUANTITY_HIGH, None)
+        params.pop(QUANTITY_LOW, None)
+    if RESTOCK_LEVEL in params:
         restock_level: int = params[RESTOCK_LEVEL]
         # if restock_level == 0, we should still execute the query
         if restock_level is not None:
-            inventories = Inventory.find_by_restock_level(restock_level)
-    elif AVAILABLE in params:
-        available: bool = params[AVAILABLE]
-        inventories = Inventory.find_by_availability(available)
-    elif params:
+            finds = Inventory.find_by_restock_level(restock_level)
+            inventories = list(set(inventories) & set(finds))
+            params.pop(RESTOCK_LEVEL, None)
+    if len(params) != 0:
         return bad_request("Invalid request parameters")
-    else:
-        inventories = Inventory.all()
     results = [inventory.serialize() for inventory in inventories]
     return make_response(jsonify(results), status.HTTP_200_OK)
 
