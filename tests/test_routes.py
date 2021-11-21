@@ -118,7 +118,6 @@ class TestInventoryServer(unittest.TestCase):
     def test_create_inventory(self):
         """ Create a new inventory """
         test_inventory = InventoryFactory()
-        logging.debug(test_inventory)
         resp = self.app.post(
             BASE_URL, json=test_inventory.serialize(), content_type="application/json"
         )
@@ -154,6 +153,19 @@ class TestInventoryServer(unittest.TestCase):
             new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
         )
 
+    def test_create_inventory_already_exist(self):
+        """ Create an inventory already exists """
+        test_inventory = InventoryFactory()
+        resp = self.app.post(
+            BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # Post again
+        resp = self.app.post(
+            BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_inventory_no_data(self):
         """ Create an inventory with missing data """
         resp = self.app.post(
@@ -183,8 +195,6 @@ class TestInventoryServer(unittest.TestCase):
         """ Test the Home Page """
         resp = self.app.get("/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        data = resp.get_json()
-        self.assertEqual(data["name"], "Inventory REST API Service")
 
     def test_get_inventory_list(self):
         """ Get a list of Inventory """
@@ -249,6 +259,14 @@ class TestInventoryServer(unittest.TestCase):
             f"{BASE_URL}?quantity_low={lowerbound}&quantity_high={upperbound}", content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(N, len(resp.get_json()))
+        resp = self.app.get(
+            f"{BASE_URL}?quantity_low={lowerbound}", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(N, len(resp.get_json()))
+        resp = self.app.get(
+            f"{BASE_URL}?quantity_high={upperbound}", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(N, len(resp.get_json()))
 
     def test_get_inventory_by_query_restock_level(self):
         """ Get a list of Inventory by query [restock_level] """
@@ -281,20 +299,139 @@ class TestInventoryServer(unittest.TestCase):
             else:  # type(data) == list
                 self.assertEqual(len(data), count[available])
 
-    def test_get_inventory_by_query_not_found(self):
-        """ Get a list of Inventory by every attributes that not found """
-        resp = self.app.get("/inventory?product_id=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?condition=USED")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?quantity=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?quantity_low=0&quantity_high=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?restock_level=0")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-        resp = self.app.get("/inventory?available=True")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+    def test_get_inventory_by_query_product_id_and_other_attribute(self):
+        """Get an Inventory by query [product_id] and other attribute"""
+        # Inventory with {product_id: 1, available: True}
+        inventory1 = InventoryFactory()
+        inventory1.product_id = 1
+        inventory1.condition = Condition.NEW
+        inventory1.available = True
+        inventory1.create()
+        # Invenotry with {product_id: 1, available: True}
+        inventory2 = InventoryFactory()
+        inventory2.product_id = 1
+        inventory2.condition = Condition.USED
+        inventory2.available = True
+        inventory2.create()
+        # Invenotry with {product_id: 2, available: True}
+        inventory3 = InventoryFactory()
+        inventory3.product_id = 2
+        inventory3.condition = Condition.NEW
+        inventory3.available = True
+        inventory3.create()
+        resp = self.app.get(
+            f"{BASE_URL}?available=True&product_id=1", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for i in data:
+            self.assertEqual(i["product_id"], 1)
+            self.assertEqual(i["available"], True)
+
+    def test_get_inventory_by_query_condition_and_other_attribute(self):
+        """Get an Inventory by query [condition] and other attribute"""
+        # Inventory with {condition: NEW, available: True}
+        inventory1 = InventoryFactory()
+        inventory1.product_id = 1
+        inventory1.condition = Condition.NEW
+        inventory1.available = True
+        inventory1.create()
+        # Invenotry with {condition: NEW, available: True}
+        inventory2 = InventoryFactory()
+        inventory2.product_id = 2
+        inventory2.condition = Condition.NEW
+        inventory2.available = True
+        inventory2.create()
+        # Invenotry with {condition: USED, available: True}
+        inventory3 = InventoryFactory()
+        inventory3.product_id = 3
+        inventory3.condition = Condition.USED
+        inventory3.available = True
+        inventory3.create()
+        resp = self.app.get(
+            f"{BASE_URL}?available=True&condition=NEW", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for i in data:
+            self.assertEqual(i["condition"], Condition.NEW.name)
+            self.assertEqual(i["available"], True)
+
+    def test_get_inventory_by_query_quantity_and_other_attribute(self):
+        """Get an Inventory by query [quantity] and other attribute"""
+        # Inventory with {quantity: 100, available: True}
+        inventory1 = InventoryFactory()
+        inventory1.product_id = 1
+        inventory1.condition = Condition.NEW
+        inventory1.quantity = 100
+        inventory1.available = True
+        inventory1.create()
+        # Invenotry with {quantity: 100, available: True}
+        inventory2 = InventoryFactory()
+        inventory2.product_id = 2
+        inventory2.condition = Condition.NEW
+        inventory2.quantity = 100
+        inventory2.available = True
+        inventory2.create()
+        # Invenotry with {quantity: 200, available: True}
+        inventory3 = InventoryFactory()
+        inventory3.product_id = 3
+        inventory3.condition = Condition.NEW
+        inventory3.quantity = 200
+        inventory3.available = True
+        inventory3.create()
+        resp = self.app.get(
+            f"{BASE_URL}?available=True&quantity=100", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for i in data:
+            self.assertEqual(i["quantity"], 100)
+            self.assertEqual(i["available"], True)
+        # Test Quantity_low
+        resp = self.app.get(
+            f"{BASE_URL}?available=True&quantity_low=200", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for i in data:
+            self.assertEqual(i["quantity"], 200)
+            self.assertEqual(i["available"], True)
+        # Test Quantity_high
+        resp = self.app.get(
+            f"{BASE_URL}?available=True&quantity_high=100", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for i in data:
+            self.assertEqual(i["quantity"], 100)
+            self.assertEqual(i["available"], True)
+
+    def test_get_inventory_by_query_restock_level_and_other_attribute(self):
+        """Get an Inventory by query [restock_level] and other attribute"""
+        # Inventory with {restock_level: 100, available: True}
+        inventory1 = InventoryFactory()
+        inventory1.product_id = 1
+        inventory1.condition = Condition.USED
+        inventory1.restock_level = 100
+        inventory1.available = True
+        inventory1.create()
+        # Invenotry with {restock_level: 100, available: True}
+        inventory2 = InventoryFactory()
+        inventory2.product_id = 2
+        inventory2.condition = Condition.USED
+        inventory2.restock_level = 100
+        inventory2.available = True
+        inventory2.create()
+        # Invenotry with {restock_level: 200, available: True}
+        inventory3 = InventoryFactory()
+        inventory3.product_id = 3
+        inventory3.condition = Condition.USED
+        inventory3.restock_level = 200
+        inventory3.available = True
+        inventory3.create()
+        resp = self.app.get(
+            f"{BASE_URL}?available=True&restock_level=100", content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        for i in data:
+            self.assertEqual(i["restock_level"], 100)
+            self.assertEqual(i["available"], True)
 
     def test_get_inventory_bad_request(self):
         """ Get a list of Inventory that bad request """
@@ -562,5 +699,29 @@ class TestInventoryServer(unittest.TestCase):
         test_inventory = InventoryFactory()
         data = test_inventory.serialize()
         data["condition"] = 'new'  # wrong case
+        inventory = Inventory()
+        self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    def test_deserialize_bad_quantity(self):
+        """ Test deserialization of data with bad quantity """
+        test_inventory = InventoryFactory()
+        data = test_inventory.serialize()
+        data["quantity"] = 'string'  # wrong type
+        inventory = Inventory()
+        self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    def test_deserialize_bad_restock_level(self):
+        """ Test deserialization of data with bad restock_level """
+        test_inventory = InventoryFactory()
+        data = test_inventory.serialize()
+        data["restock_level"] = 'string'  # wrong type
+        inventory = Inventory()
+        self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    def test_deserialize_bad_available(self):
+        """ Test deserialization of data with bad available """
+        test_inventory = InventoryFactory()
+        data = test_inventory.serialize()
+        data["available"] = 'string'  # wrong type
         inventory = Inventory()
         self.assertRaises(DataValidationError, inventory.deserialize, data)
