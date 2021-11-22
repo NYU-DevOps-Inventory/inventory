@@ -26,7 +26,6 @@ Scenario: Retrieve an Inventory
     And I should see "100" in the "Restock Level" field
     And I should see "True" in the "Available" dropdown
 
-    
 Scenario: Update an Inventory
     When I visit the "Home Page"
     And I set the "Product ID" to "1"
@@ -36,6 +35,7 @@ Scenario: Update an Inventory
     And I set the "Available" to "False"
     And I press the "Update" button
     Then I should see the message "Success"
+    When I visit the "Home Page"
     And I set the "Product ID" to "1"
     And I select "NEW" in the "Condition" dropdown
     And I press the "Retrieve" button
@@ -45,7 +45,6 @@ Scenario: Update an Inventory
     And I should see "200" in the "Quantity" field
     And I should see "400" in the "Restock Level" field
     And I should see "False" in the "Available" dropdown
-        
 
 Scenario: Create an Inventory
     When I visit the "Home Page"
