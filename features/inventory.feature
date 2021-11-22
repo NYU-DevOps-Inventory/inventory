@@ -32,7 +32,7 @@ Scenario: Update an Inventory
     And I select "NEW" in the "Condition" dropdown
     And I set the "Quantity" to "200"
     And I set the "Restock Level" to "400"
-    And I set the "Available" to "False"
+    And I select "False" in the "Available" dropdown
     And I press the "Update" button
     Then I should see the message "Success"
     When I visit the "Home Page"
