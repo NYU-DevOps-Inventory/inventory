@@ -48,11 +48,9 @@ import logging
 import os
 import unittest
 from typing import Dict, List, Optional, Set
-from urllib.parse import quote_plus
 
 from service import status  # HTTP Status Codes
-from service.constants import ADDED_AMOUNT, CONDITION, QUANTITY, RESTOCK_LEVEL
-from service.error_handlers import bad_request
+from service.constants import ADDED_AMOUNT, QUANTITY, RESTOCK_LEVEL
 from service.models import Condition, DataValidationError, Inventory, db
 from service.routes import app, init_db
 
@@ -586,6 +584,36 @@ class TestInventoryServer(unittest.TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_inventory_by_api_base_url(self):
+        """ Update an existing record in Inventory by API_BASE_URL """
+        # create a record in Inventory
+        inventory = InventoryFactory()
+        inventory.condition = Condition.NEW
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        url: str = "{0}/{1}/condition/{2}".format(
+            API_BASE_URL,
+            inventory.product_id,
+            inventory.condition.name
+        )
+        # update `quantity` and `restock_level`
+        resp = self.app.put(
+            url,
+            json={QUANTITY: 1000, RESTOCK_LEVEL: 400},
+            content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_update_inventory_by_api_base_url_not_found(self):
+        """ Update an existing record in Inventory by API_BASE_URL that not found """
+        resp = self.app.put(
+            "{0}/1/condition/NEW".format(API_BASE_URL),
+            json={},
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_used_restock_level(self):
         """Update the restock_level of a USED record"""
