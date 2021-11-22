@@ -43,11 +43,11 @@ While debugging just these tests it's convinient to use this:
   nosetests --stop tests/test_routes.py:TestInventoryServer
 """
 
+import json
 import logging
 import os
-import sys
 import unittest
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 from urllib.parse import quote_plus
 
 from service import status  # HTTP Status Codes
@@ -63,6 +63,7 @@ DATABASE_URI = os.getenv(
 )
 
 BASE_URL = "/inventory"
+API_BASE_URL = "/api/inventory"
 
 ######################################################################
 #  T E S T   C A S E S
@@ -236,6 +237,29 @@ class TestInventoryServer(unittest.TestCase):
                                      status.HTTP_404_NOT_FOUND)
             else:  # type(data) == list
                 self.assertEqual(len(data), count[condition.name])
+
+    def test_get_inventory_by_query_product_id_and_condition(self):
+        """ Get an Inventory by query [product_id] and [condition] """
+        N = 5
+        inventories: List[Inventory] = self._create_inventories(N)
+        inventories_set: Set[Inventory] = set()
+        for inv in inventories:
+            resp = self.app.get(
+                "{0}/{1}/condition/{2}".format(
+                    API_BASE_URL,
+                    inv.product_id,
+                    inv.condition.name),
+                content_type="application/json")
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            inventories_set.add(json.dumps(resp.get_json()))
+        self.assertEqual(len(inventories_set), N)
+
+    def test_get_inventory_by_query_product_id_and_condition_not_found(self):
+        """ Get Inventory by [product_id] and [condition] that not found """
+        resp = self.app.get(
+            "{0}/1/condition/NEW".format(API_BASE_URL),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_get_inventory_by_query_quantity(self):
         """ Get a list of Inventory by query [quantity] """
