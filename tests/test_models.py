@@ -45,10 +45,10 @@ import logging
 import os
 import unittest
 
-from service import app
-from service.models import Condition, DataValidationError, Inventory, db
 from werkzeug.exceptions import NotFound
 
+from service import app
+from service.models import Condition, DataValidationError, Inventory, db
 from tests.factories import InventoryFactory
 
 DATABASE_URI = os.getenv(

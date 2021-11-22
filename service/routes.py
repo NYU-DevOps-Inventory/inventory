@@ -37,9 +37,10 @@ DELETE /inventory/{int:product_id}/condition/{string:condition}
 """
 
 import sys
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from flask import abort, jsonify, make_response, request, url_for
+from flask_restx import Api, Resource, fields, inputs, reqparse
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
 # variety of backends including SQLite, MySQL, and PostgreSQL
 from werkzeug.exceptions import NotFound
@@ -62,6 +63,92 @@ from . import status  # HTTP Status Codes
 def index():
     """ Root URL response """
     return app.send_static_file("index.html")
+
+
+######################################################################
+# Configure Swagger before initializing it
+######################################################################
+api = Api(app,
+          version='1.0.0',
+          title='Inventory Demo REST API Service',
+          description='This is a sample server Inventory store server.',
+          default='inventory',
+          default_label='Inventory shop operations',
+          doc='/apidocs',  # default also could use doc='/apidocs/'
+          prefix='/api'
+          )
+
+
+# Define the model so that the docs reflect what can be sent
+inventory_model = api.model('Inventory', {
+    PRODUCT_ID: fields.Integer(readOnly=True,
+                               description='The unique id assigned to a Product\n'),
+    CONDITION: fields.String(readOnly=True,
+                             description='Condition of the product\nNote: {} in ["new", "used", "open box"]'
+                             .format(CONDITION)),
+    QUANTITY: fields.Integer(required=True,
+                             description='The Quantity of Inventory item\nNote: {} >= 0'.format(QUANTITY)),
+    RESTOCK_LEVEL: fields.Integer(required=True,
+                                  description='The level below which restock this item is triggered.\nNote: {} >= 0'
+                                  .format(RESTOCK_LEVEL)),
+    AVAILABLE: fields.Boolean(required=True,
+                              description='Is the Product avaialble?\nNote: Available (True) or Unavailable (False)')
+})
+
+
+# query string arguments
+inventory_args = reqparse.RequestParser()
+inventory_args.add_argument(PRODUCT_ID, type=int, required=False,
+                            help='List Inventory by Product ID')
+inventory_args.add_argument(CONDITION, type=str, required=False,
+                            help='List Inventory by Condition')
+inventory_args.add_argument(QUANTITY, type=int, required=False,
+                            help='List Inventory by (>=) Quantity')
+inventory_args.add_argument(AVAILABLE, type=inputs.boolean, required=False,
+                            help='List Inventory by Availability')
+
+
+####################################################################################################
+#  U T I L I T Y   F U N C T I O N S
+####################################################################################################
+@app.before_first_request
+def init_db():
+    """ Initialize the SQLAlchemy app """
+    global app
+    Inventory.init_db(app)
+
+
+######################################################################
+#  PATH: /inventory/{product_id}/condition/{condition}
+######################################################################
+@api.route('/inventory/<int:product_id>/condition/<string:condition>')
+@api.param('product_id, condition', 'The Inventory identifiers')
+class InventoryResource(Resource):
+    """
+    GET     /inventory/<int:product_id>/condition/<string:condition> - Return an Inventory
+    PUT     /inventory/<int:product_id>/condition/<string:condition> - Update an Inventory
+    DELETE  /inventory/<int:product_id>/condition/<string:condition> - Delete an Inventory
+    """
+
+    # ------------------------------------------------------------------
+    # RETRIEVE A INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('get_inventory')
+    @api.response(404, 'Inventory not found')
+    @api.marshal_with(inventory_model)
+    def get(self, product_id: int, condition: str):
+        """ Retrieve inventory by the product_id and condition """
+        app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
+            product_id, condition))
+        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
+            product_id, condition)
+        if not inventory:
+            api.abort(status.HTTP_404_NOT_FOUND,
+                      "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
+        app.logger.info("Return inventory with product_id {} and condition {}".format(
+            product_id, condition))
+        return inventory.serialize(), status.HTTP_200_OK
+
 
 ######################################################################
 # GET: LIST ALL INVENTORY
@@ -307,12 +394,6 @@ def delete_inventory(product_id, condition):
 ######################################################################
 #  U T I L I T Y   F U N C T I O N S
 ######################################################################
-
-
-def init_db():
-    """ Initialize the SQLAlchemy app """
-    global app
-    Inventory.init_db(app)
 
 
 def check_content_type(content_type):
