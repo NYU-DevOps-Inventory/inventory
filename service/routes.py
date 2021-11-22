@@ -107,10 +107,11 @@ inventory_args.add_argument(QUANTITY, type=int, required=False,
 inventory_args.add_argument(AVAILABLE, type=inputs.boolean, required=False,
                             help='List Inventory by Availability')
 
-
-####################################################################################################
+################################################################################
 #  U T I L I T Y   F U N C T I O N S
-####################################################################################################
+################################################################################
+
+
 @app.before_first_request
 def init_db():
     """ Initialize the SQLAlchemy app """
@@ -137,7 +138,11 @@ class InventoryResource(Resource):
     @api.response(404, 'Inventory not found')
     @api.marshal_with(inventory_model)
     def get(self, product_id: int, condition: str):
-        """ Retrieve inventory by the product_id and condition """
+        """
+        Retrieve a single Inventory
+
+        This endpoint will return an Inventory based on it's product_id and condition
+        """
         app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
             product_id, condition))
         inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
@@ -146,6 +151,39 @@ class InventoryResource(Resource):
             api.abort(status.HTTP_404_NOT_FOUND,
                       "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
         app.logger.info("Return inventory with product_id {} and condition {}".format(
+            product_id, condition))
+        return inventory.serialize(), status.HTTP_200_OK
+
+    # ------------------------------------------------------------------
+    # UPDATE AN EXISTING INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('update_inventory')
+    @api.response(status.HTTP_404_NOT_FOUND, 'Inventory not found')
+    @api.response(status.HTTP_400_BAD_REQUEST, 'The posted Inventory data was not valid')
+    @api.expect(inventory_model)
+    @api.marshal_with(inventory_model)
+    def put(self, product_id: int, condition: str):
+        """
+        Update an Inventory
+
+        This endpoint will update an Inventory based the body that is posted
+        """
+        app.logger.info("Request to update inventory with key ({}, {})"
+                        .format(product_id, condition))
+        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
+            product_id, condition)
+        if not inventory:
+            api.abort(status.HTTP_404_NOT_FOUND,
+                      "Inventory with ({}, {})".format(product_id, condition))
+        app.logger.debug(f"Payload = {api.payload}")
+        # To conform with expect
+        inventory_dict = inventory.serialize()
+        for key in inventory_dict.keys():
+            if key in api.payload:
+                inventory_dict[key] = api.payload[key]
+        inventory.deserialize(inventory_dict)
+        inventory.update()
+        app.logger.info("Inventory ({}, {}) updated.".format(
             product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
 
