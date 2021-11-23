@@ -121,7 +121,7 @@ def init_db():
 
 
 ######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}
+# PATH: /inventory/{product_id}/condition/{condition}
 ######################################################################
 @api.route('/inventory/<int:product_id>/condition/<string:condition>')
 @api.param('product_id, condition', 'The Inventory identifiers')
@@ -142,17 +142,17 @@ class InventoryResource(Resource):
         """
         Retrieve a single Inventory
 
-        This endpoint will return an Inventory based on it's product_id and condition
+        This endpoint will return an Inventory based on product_id and condition
         """
-        app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
-            product_id, condition))
+        app.logger.info("Request to get inventory with key ({}, {})"
+                        .format(product_id, condition))
         inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
             product_id, condition)
         if not inventory:
             api.abort(status.HTTP_404_NOT_FOUND,
                       "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
-        app.logger.info("Return inventory with product_id {} and condition {}".format(
-            product_id, condition))
+        app.logger.info("Inventory ({}, {}) returned."
+                        .format(product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
 
     # ------------------------------------------------------------------
@@ -184,9 +184,30 @@ class InventoryResource(Resource):
                 inventory_dict[key] = api.payload[key]
         inventory.deserialize(inventory_dict)
         inventory.update()
-        app.logger.info("Inventory ({}, {}) updated.".format(
-            product_id, condition))
+        app.logger.info("Inventory ({}, {}) updated."
+                        .format(product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
+
+    # ------------------------------------------------------------------
+    # DELETE AN INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('delete_inventory')
+    @api.response(status.HTTP_204_NO_CONTENT, 'Inventory deleted')
+    def delete(self, product_id: int, condition: str):
+        """
+        Delete an Inventory
+
+        This endpoint will delete an Inventory based on product_id and condition
+        """
+        app.logger.info("Request to delete inventory with key ({}, {})"
+                        .format(product_id, condition))
+        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
+            product_id, condition)
+        if inventory:
+            inventory.delete()
+        app.logger.info("Inventory ({}, {}) deleted."
+                        .format(product_id, condition))
+        return '', status.HTTP_204_NO_CONTENT
 
 
 ######################################################################

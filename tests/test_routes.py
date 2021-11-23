@@ -313,29 +313,6 @@ class TestInventoryServer(unittest.TestCase):
             else:  # type(data) == list
                 self.assertEqual(len(data), count[condition.name])
 
-    def test_get_inventory_by_query_product_id_and_condition(self):
-        """ Get an Inventory by query [product_id] and [condition] """
-        N = 5
-        inventories: List[Inventory] = self._create_inventories(N)
-        inventories_set: Set[Inventory] = set()
-        for inv in inventories:
-            resp = self.app.get(
-                "{0}/{1}/condition/{2}".format(
-                    API_BASE_URL,
-                    inv.product_id,
-                    inv.condition.name),
-                content_type="application/json")
-            self.assertEqual(resp.status_code, status.HTTP_200_OK)
-            inventories_set.add(json.dumps(resp.get_json()))
-        self.assertEqual(len(inventories_set), N)
-
-    def test_get_inventory_by_query_product_id_and_condition_not_found(self):
-        """ Get Inventory by [product_id] and [condition] that not found """
-        resp = self.app.get(
-            "{0}/1/condition/NEW".format(API_BASE_URL),
-            content_type="application/json")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-
     def test_get_inventory_by_query_quantity(self):
         """ Get a list of Inventory by query [quantity] """
         N = 5
@@ -662,36 +639,6 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_update_inventory_by_api_base_url(self):
-        """ Update an existing record in Inventory by API_BASE_URL """
-        # create a record in Inventory
-        inventory = InventoryFactory()
-        inventory.condition = Condition.NEW
-        resp = self.app.post(
-            BASE_URL, json=inventory.serialize(), content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        url: str = "{0}/{1}/condition/{2}".format(
-            API_BASE_URL,
-            inventory.product_id,
-            inventory.condition.name
-        )
-        # update `quantity` and `restock_level`
-        resp = self.app.put(
-            url,
-            json={QUANTITY: 1000, RESTOCK_LEVEL: 400},
-            content_type="application/json"
-        )
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-
-    def test_update_inventory_by_api_base_url_not_found(self):
-        """ Update an existing record in Inventory by API_BASE_URL that not found """
-        resp = self.app.put(
-            "{0}/1/condition/NEW".format(API_BASE_URL),
-            json={},
-            content_type="application/json")
-        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-
     def test_update_used_restock_level(self):
         """Update the restock_level of a USED record"""
         # create a record in Inventory
@@ -854,3 +801,89 @@ class TestInventoryServer(unittest.TestCase):
         data["available"] = 'string'  # wrong type
         inventory = Inventory()
         self.assertRaises(DataValidationError, inventory.deserialize, data)
+
+    ############################################################################
+    # TEST CASES for API_BASE_URL
+    ############################################################################
+
+    # --------------------------------------------------------------------------
+    # PATH: /api/inventory/{product_id}/condition/{condition}
+    # --------------------------------------------------------------------------
+
+    def test_get_inventory_by_query_product_id_and_condition(self):
+        """ Get an Inventory by query [product_id] and [condition] """
+        N = 5
+        inventories: List[Inventory] = self._create_inventories(N)
+        inventories_set: Set[Inventory] = set()
+        for inv in inventories:
+            resp = self.app.get(
+                "{0}/{1}/condition/{2}".format(
+                    API_BASE_URL,
+                    inv.product_id,
+                    inv.condition.name),
+                content_type="application/json")
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            inventories_set.add(json.dumps(resp.get_json()))
+        self.assertEqual(len(inventories_set), N)
+
+    def test_get_inventory_by_query_product_id_and_condition_not_found(self):
+        """ Get Inventory by [product_id] and [condition] that not found """
+        resp = self.app.get(
+            "{0}/1/condition/NEW".format(API_BASE_URL),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_inventory_by_api_base_url(self):
+        """ Update an existing record in Inventory by API_BASE_URL """
+        # create a record in Inventory
+        inventory = InventoryFactory()
+        inventory.condition = Condition.NEW
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        url: str = "{0}/{1}/condition/{2}".format(
+            API_BASE_URL,
+            inventory.product_id,
+            inventory.condition.name
+        )
+        # update `quantity` and `restock_level`
+        resp = self.app.put(
+            url,
+            json={QUANTITY: 1000, RESTOCK_LEVEL: 400},
+            content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_update_inventory_by_api_base_url_not_found(self):
+        """ Update an existing record in Inventory by API_BASE_URL that not found """
+        resp = self.app.put(
+            "{0}/1/condition/NEW".format(API_BASE_URL),
+            json={},
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_inventory_by_api_base_url(self):
+        """ Delete an inventory """
+        inventory: Inventory = self._create_inventories(1)[0]
+        url: str = "{0}/{1}/condition/{2}".format(
+            API_BASE_URL,
+            inventory.product_id,
+            inventory.condition.name
+        )
+        resp = self.app.delete(url, content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(len(resp.data), 0)
+        # make sure they are deleted
+        resp = self.app.get(url, content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
+    # TODO:
+    # --------------------------------------------------------------------------
+    # PATH: /api/inventory/{product_id}
+    # --------------------------------------------------------------------------
+
+    # TODO:
+    # --------------------------------------------------------------------------
+    # PATH: /api/condition/{condition}
+    # --------------------------------------------------------------------------
