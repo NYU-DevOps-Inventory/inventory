@@ -679,6 +679,13 @@ class TestInventoryServer(unittest.TestCase):
             content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
 
+    def test_activate_inventory_not_found_by_api_base_url(self):
+        """Activate an non-existing record in Inventory by API_BASE_URL"""
+        resp = self.app.put(
+            "{0}/1/condition/NEW/activate".format(API_BASE_URL),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_activate_inventory(self):
         """Activate an existing record in Inventory"""
         inventory = InventoryFactory()
@@ -743,6 +750,13 @@ class TestInventoryServer(unittest.TestCase):
                 inventory.condition.name),
             content_type="application/json")
         self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
+
+    def test_deactivate_inventory_not_found_by_api_base_url(self):
+        """Deactivate an non-existing record in Inventory by API_BASE_URL"""
+        resp = self.app.put(
+            "{0}/1/condition/NEW/deactivate".format(API_BASE_URL),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_deactivate_inventory(self):
         """Deactivate an existing record in Inventory"""
