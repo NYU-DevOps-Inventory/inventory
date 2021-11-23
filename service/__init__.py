@@ -19,8 +19,6 @@ This module creates and configures the Flask app and sets up the logging
 and SQL database
 """
 import logging
-import os
-import sys
 
 from flask import Flask
 
@@ -29,7 +27,7 @@ app = Flask(__name__)
 app.config.from_object("config")
 
 # Import the rutes After the Flask app is created
-from service import error_handlers, models, routes
+from service import routes
 
 # Set up logging for production
 print(f"Setting log level to {logging.INFO}")
@@ -48,11 +46,6 @@ app.logger.info(
     "  I N V E N T O R Y   S E R V I C E   R U N N I N G  ".center(70, "*"))
 app.logger.info(70 * "*")
 
-try:
-    routes.init_db()  # make our sqlalchemy tables
-except Exception as error:
-    app.logger.critical("%s: Cannot continue", error)
-    # gunicorn requires exit code 4 to stop spawning workers when they die
-    sys.exit(4)
+routes.init_db()  # make our sqlalchemy tables
 
 app.logger.info("Service inititalized!")

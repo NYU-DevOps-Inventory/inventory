@@ -44,16 +44,15 @@ While debugging just these tests it's convinient to use this:
 import logging
 import os
 import unittest
+from typing import List
 
-from werkzeug.exceptions import NotFound
+from sqlalchemy import exc
 
 from service import app
+from service.constants import POSTGRES_DATABASE_URI, QUANTITY
 from service.models import Condition, DataValidationError, Inventory, db
-from tests.factories import InventoryFactory
 
-DATABASE_URI = os.getenv(
-    "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
-)
+DATABASE_URI = os.getenv("DATABASE_URI", POSTGRES_DATABASE_URI)
 
 ######################################################################
 #  I N V E N T O R Y   M O D E L   T E S T   C A S E S
@@ -90,180 +89,110 @@ class TestInventoryModel(unittest.TestCase):
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
-    def test_repr_of_an_inventory(self):
+
+    def test_inventory_repr(self):
+        """ Inventory __repr__ """
         product_id = 1
         condition = Condition.NEW
         inventory = Inventory(product_id=product_id,
                               condition=condition, quantity=2, restock_level=3)
-        self.assertIsNot(inventory, None)
         self.assertEqual(
-            str(inventory), f"<Inventory product_id=[{product_id}] with condition=[{condition}] condition>")
+            str(inventory), "<Inventory ({}, {})>".format(product_id, condition))
 
-    def test_create_an_inventory(self):
-        """ Create an inventory and assert that it exists """
-        inventory = Inventory(
-            product_id=1, condition=Condition.NEW, quantity=2, restock_level=3, available=True)
-        self.assertTrue(inventory != None)
-        self.assertEqual(inventory.product_id, 1)
-        self.assertEqual(inventory.condition, Condition.NEW)
-        self.assertEqual(inventory.quantity, 2)
-        self.assertEqual(inventory.restock_level, 3)
-        self.assertEqual(inventory.available, True)
+    def test_deserialize_key_error(self):
+        """ Deserialize: KeyError """
+        inventory = Inventory()
+        try:
+            inventory.deserialize({QUANTITY: 1})
+        except:
+            pass
 
-    def test_update_inventory(self):
-        """ Update an existing record in inventory """
-        inventory = Inventory(
-            product_id=1, condition=Condition.NEW, quantity=100, restock_level=40, available=True)
-        inventory.create()
-        orininal_product_id = inventory.product_id
-        original_condition = inventory.condition
-        inventory.quantity = 70
-        inventory.restock_level = 50
-        inventory.available = False
-        inventory.update()
-        latest_inventory = Inventory.all()
-        self.assertEqual(len(latest_inventory), 1)
-        self.assertEqual(latest_inventory[0].product_id, orininal_product_id)
-        self.assertEqual(latest_inventory[0].condition, original_condition)
-        self.assertEqual(latest_inventory[0].quantity, 70)
-        self.assertEqual(latest_inventory[0].restock_level, 50)
-        self.assertEqual(latest_inventory[0].available, False)
+    def test_invalid_restock_level(self):
+        """ Find a list of all Inventory """
+        # Inventory wich Condition.NEW should have restock_level >= 0
+        inventory = Inventory(product_id=1, condition=Condition.NEW,
+                              quantity=2, restock_level=None)
+        try:
+            inventory.validate_data()
+        except DataValidationError:
+            pass
 
-    def test_add_an_inventory(self):
-        """ Create an inventory and add it to the database """
-        inventories = Inventory.all()
-        self.assertEqual(inventories, [])
-        inventory = Inventory(
-            product_id=1, condition=Condition.NEW, quantity=2, restock_level=3, available=True)
-        self.assertTrue(inventory != None)
-        self.assertEqual(inventory.product_id, 1)
-        inventory.create()
-        # Assert that it shows up in the database
-        inventories = Inventory.all()
-        self.assertEqual(len(inventories), 1)
-
-    def test_delete_an_inventory(self):
-        """ Delete an inventory """
-        inventory = InventoryFactory()
-        inventory.create()
-        self.assertEqual(len(Inventory.all()), 1)
-        # delete the inventory and make sure it isn't in the database
-        inventory.delete()
-        self.assertEqual(len(Inventory.all()), 0)
-
-    def test_find_by_product_id_condition(self):
-        """ Find an Inventory by [product_id] and [condition] """
-        inventory = Inventory(
-            product_id=123, condition=Condition.NEW, quantity=2, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        result = Inventory.find_by_product_id_condition(
-            inventory.product_id, inventory.condition)
-        self.assertIsNot(result, None)
-        self.assertEqual(result.product_id, inventory.product_id)
-        self.assertEqual(result.condition, inventory.condition)
-        self.assertEqual(result.quantity, inventory.quantity)
-        self.assertEqual(result.restock_level, inventory.restock_level)
-        self.assertEqual(result.available, inventory.available)
+    def test_find_all(self):
+        """ Find a list of all Inventory """
+        Inventory(product_id=1, condition=Condition.NEW,
+                  quantity=2, restock_level=3).create()
+        Inventory(product_id=1, condition=Condition.USED,
+                  quantity=2, available=True).create()
+        inventories: List[Inventory] = Inventory.find_all()
+        self.assertEqual(len(list(inventories)), 2)
 
     def test_find_by_product_id(self):
-        """ Find Inventory by [product_id] """
-        inventory = Inventory(
-            product_id=124, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=124, condition=Condition.USED, quantity=4, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventories = Inventory.find_by_product_id(inventory.product_id)
-        self.assertEqual(len(list(inventories)), 2)
+        """ Find a list of Inventory by [product_id] """
+        p1 = 1
+        p2 = 2
+        Inventory(product_id=p1, condition=Condition.NEW, quantity=2).create()
+        Inventory(product_id=p2, condition=Condition.NEW, quantity=2).create()
+        Inventory(product_id=p2, condition=Condition.USED, quantity=2).create()
+        for product_id, count in zip([p1, p2], [1, 2]):
+            inventories: List[Inventory] = Inventory.find_by_product_id(
+                product_id)
+            self.assertEqual(len(list(inventories)), count)
 
     def test_find_by_condition(self):
-        """ Find an Inventory by [condition] """
-        inventory = Inventory(
-            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventories = Inventory.find_by_condition(inventory.condition)
-        self.assertEqual(len(list(inventories)), 2)
+        """ Find a list of Inventory by [condition] """
+        c1 = Condition.NEW
+        c2 = Condition.OPEN_BOX
+        Inventory(product_id=1, condition=c1, quantity=2).create()
+        Inventory(product_id=2, condition=c2, quantity=2).create()
+        Inventory(product_id=3, condition=c2, quantity=2).create()
+        for condition, count in zip([c1, c2], [1, 2]):
+            inventories: List[Inventory] = Inventory.find_by_condition(
+                condition)
+            self.assertEqual(len(list(inventories)), count)
 
     def test_find_by_quantity(self):
-        """ Find an Inventory by [quantity] """
-        inventory = Inventory(
-            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=345, condition=Condition.NEW, quantity=2, restock_level=5, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventories = Inventory.find_by_quantity(1)
-        self.assertEqual(len(list(inventories)), 2)
-        inventories = Inventory.find_by_quantity(2)
-        self.assertEqual(len(list(inventories)), 1)
+        """ Find a list of Inventory by [quantity] """
+        q1 = 1
+        q2 = 2
+        Inventory(product_id=1, condition=Condition.NEW, quantity=q1).create()
+        Inventory(product_id=2, condition=Condition.NEW, quantity=q2).create()
+        Inventory(product_id=3, condition=Condition.NEW, quantity=q2).create()
+        for quantity, count in zip([q1, q2], [1, 2]):
+            inventories: List[Inventory] = Inventory.find_by_quantity(quantity)
+            self.assertEqual(len(list(inventories)), count)
 
     def test_find_by_quantity_range(self):
-        """ Find Inventory by [quantity range] """
-        inventory = Inventory(
-            product_id=333, condition=Condition.NEW, quantity=2, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=344, condition=Condition.NEW, quantity=3, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=345, condition=Condition.NEW, quantity=5, restock_level=5, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventories = Inventory.find_by_quantity_range(2, 6)
+        """ Find a list of Inventory by [quantity range] """
+        Inventory(product_id=1, condition=Condition.NEW, quantity=2).create()
+        Inventory(product_id=2, condition=Condition.NEW, quantity=3).create()
+        Inventory(product_id=3, condition=Condition.USED, quantity=5).create()
+        inventories: List[Inventory] = Inventory.find_by_quantity_range(2, 6)
         self.assertEqual(len(list(inventories)), 3)
-        inventories = Inventory.find_by_quantity_range(6, 10)
+        inventories: List[Inventory] = Inventory.find_by_quantity_range(6, 10)
         self.assertEqual(len(list(inventories)), 0)
 
     def test_find_by_restock_level(self):
-        """ Find an Inventory by [restock_level] """
-        inventory = Inventory(
-            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=344, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=345, condition=Condition.NEW, quantity=1, restock_level=5, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventories = Inventory.find_by_restock_level(10)
-        self.assertEqual(len(list(inventories)), 2)
-        inventories = Inventory.find_by_restock_level(5)
-        self.assertEqual(len(list(inventories)), 1)
+        """ Find a list of Inventory by [restock_level] """
+        r1 = 1
+        r2 = 2
+        Inventory(product_id=1, condition=Condition.NEW,
+                  quantity=2, restock_level=r1).create()
+        Inventory(product_id=2, condition=Condition.NEW,
+                  quantity=3, restock_level=r2).create()
+        Inventory(product_id=3, condition=Condition.USED,
+                  quantity=5, restock_level=r2).create()
+        for restock_level, count in zip([r1, r2], [1, 2]):
+            inventories: List[Inventory] = Inventory.find_by_restock_level(
+                restock_level)
+            self.assertEqual(len(list(inventories)), count)
 
-    def test_find_by_availability(self):
-        """ Find an Inventory by [available] """
-        inventory = Inventory(
-            product_id=333, condition=Condition.NEW, quantity=1, restock_level=10, available=True)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventory = Inventory(
-            product_id=344, condition=Condition.USED, quantity=1, restock_level=10, available=False)
-        if not Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            inventory.create()
-        inventories = Inventory.find_by_availability(True)
-        self.assertEqual(len(list(inventories)), 1)
-        self.assertEqual(inventories[0].product_id, 333)
-        self.assertEqual(inventories[0].condition, Condition.NEW)
-        inventories = Inventory.find_by_availability(False)
-        self.assertEqual(len(list(inventories)), 1)
-        self.assertEqual(inventories[0].product_id, 344)
-        self.assertEqual(inventories[0].condition, Condition.USED)
+    def test_find_by_available(self):
+        """ Find a list of Inventory by [available] """
+        Inventory(product_id=1, condition=Condition.NEW,
+                  quantity=2, available=True).create()
+        Inventory(product_id=2, condition=Condition.NEW, quantity=3).create()
+        Inventory(product_id=3, condition=Condition.USED, quantity=5).create()
+        for available, count in zip([True, False], [1, 2]):
+            inventories: List[Inventory] = Inventory.find_by_available(
+                available)
+            self.assertEqual(len(list(inventories)), count)

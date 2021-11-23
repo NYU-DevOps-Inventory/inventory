@@ -41,7 +41,7 @@ Scenario: Update an Inventory
     Then I should see the message "Success"
     And I should see "1" in the "Product ID" field
     And I should see "NEW" in the "Condition" dropdown
-    And I should see "200" in the "Quantity" field
+    And I should see "500" in the "Quantity" field
     And I should see "400" in the "Restock Level" field
     And I should see "True" in the "Available" dropdown
 
@@ -105,5 +105,5 @@ Scenario: Delete an Inventory
     And I press the "Delete" button
     Then I should see the message "Inventory has been Deleted!"
     When I press the "Retrieve" button
-    Then I should see the message "404 Not Found: Inventory with product_id '1' and condition 'NEW' was not found."
+    Then I should see the message "Inventory (1, NEW) NOT FOUND"
     And I should not see "Inventory has been Deleted!"

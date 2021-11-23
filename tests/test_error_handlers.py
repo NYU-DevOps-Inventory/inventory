@@ -2,16 +2,20 @@ import os
 from unittest import TestCase
 
 from service import status
+from service.constants import (API_URL, CONTENT_TYPE, POSTGRES_DATABASE_URI,
+                               QUANTITY, RESTOCK_LEVEL)
 from service.error_handlers import internal_server_error, method_not_supported
 from service.models import db
 from service.routes import app, init_db
+from tests.factories import InventoryFactory
+from tests.test_routes import CONTENT_TYPE
 
-DATABASE_URI = os.getenv(
-    "DATABASE_URI", "postgres://postgres:postgres@localhost:5432/postgres"
-)
+DATABASE_URI = os.getenv("DATABASE_URI", POSTGRES_DATABASE_URI)
 
 
 class TestErrorHandlers(TestCase):
+    """ Test Cases for Error Handlers """
+
     @classmethod
     def setUpClass(cls):
         """ Run once before all tests """
@@ -38,6 +42,21 @@ class TestErrorHandlers(TestCase):
     ######################################################################
     #  T E S T   C A S E S
     ######################################################################
+    def test_request_validation_error(self):
+        """ Request validation error: HTTP_400_BAD_REQUEST """
+        inventory = InventoryFactory()
+        resp = self.app.post(
+            API_URL, json=inventory.serialize(), content_type=CONTENT_TYPE)
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}".format(
+                API_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            json={QUANTITY: -1000, RESTOCK_LEVEL: -400},
+            content_type=CONTENT_TYPE)
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_method_not_supported(self):
         """ Test method not supported """
         error = 405
