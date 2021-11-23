@@ -606,6 +606,78 @@ class TestInventoryServer(unittest.TestCase):
             content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # check result
+        resp = self.app.get(
+            "{0}/{1}/condition/{2}".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json()[QUANTITY], 1000)
+        self.assertEqual(resp.get_json()[RESTOCK_LEVEL], 400)
+
+    def test_update_inventory_with_added_amount_true_by_api_base_url(self):
+        """ Update an existing record in Inventory with added amount true by API_BASE_URL """
+        # create a record in Inventory
+        inventory = InventoryFactory()
+        inventory.condition = Condition.NEW
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # add amount to `quantity` and update `restock_level`
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}?added_amount=True".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name
+            ),
+            json={QUANTITY: 1000, RESTOCK_LEVEL: 400},
+            content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # check result
+        resp = self.app.get(
+            "{0}/{1}/condition/{2}".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json()[QUANTITY], 1000 + inventory.quantity)
+        self.assertEqual(resp.get_json()[RESTOCK_LEVEL], 400)
+
+    def test_update_inventory_with_added_amount_false_by_api_base_url(self):
+        """ Update an existing record in Inventory with added amount false by API_BASE_URL """
+        # create a record in Inventory
+        inventory = InventoryFactory()
+        inventory.condition = Condition.NEW
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update `quantity` and update `restock_level`
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}?added_amount=False".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name
+            ),
+            json={QUANTITY: 2300, RESTOCK_LEVEL: 400},
+            content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # check result
+        resp = self.app.get(
+            "{0}/{1}/condition/{2}".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json()[QUANTITY], 2300)
+        self.assertEqual(resp.get_json()[RESTOCK_LEVEL], 400)
 
     def test_update_inventory_by_api_base_url_not_found(self):
         """ Update an existing record in Inventory by API_BASE_URL that not found """

@@ -91,7 +91,6 @@ $(function () {
     var restock_level = $('#inventory_restock_level').val();
     var quantity = $('#inventory_quantity').val();
     var added_amount = $('#inventory_added_amount').val();
-    var available = $('#inventory_available').val() == 'true';
 
     // Convert input type
     if (!isNaN(quantity)) {
@@ -105,12 +104,9 @@ $(function () {
     }
 
     var data = {
-      product_id: product_id,
-      condition: condition,
       quantity: quantity,
       restock_level: restock_level,
-      added_amount: added_amount,
-      available: available,
+      added_amount: added_amount
     };
 
     var ajax = $.ajax({
