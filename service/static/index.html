@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Inventory Demo RESTful Service</title>
   <meta charset="utf-8" />
@@ -93,6 +94,19 @@
             </div>
           </div>
           <div class="form-group">
+            <label class="control-label col-sm-2" for="quantity_bound">
+              Lower and Upper Bound of Quantity:
+            </label>
+            <div class="col-sm-5">
+              <input type="text" class="form-control" id="inventory_quantity_low"
+                placeholder="Enter a lower bound of quantity" />
+            </div>
+            <div class="col-sm-5">
+              <input type="text" class="form-control" id="inventory_quantity_high"
+                placeholder="Enter a higher bound of quantity" />
+            </div>
+          </div>
+          <div class="form-group">
             <div class="col-sm-offset-2 col-sm-10">
               <button type="submit" class="btn btn-primary" id="search-btn">
                 Search
@@ -106,6 +120,8 @@
               <button type="submit" class="btn btn-primary" id="update-btn">
                 Update
               </button>
+            </div>
+            <div class="col-sm-offset-2 col-sm-10">
               <button type="submit" class="btn btn-primary" id="activate-btn">
                 Activate
               </button>
@@ -142,4 +158,5 @@
   </div>
   <!--/row-->
 </body>
+
 </html>
