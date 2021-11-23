@@ -49,7 +49,8 @@ from werkzeug.exceptions import NotFound
 from service.constants import (ADDED_AMOUNT, AVAILABLE, CONDITION, PRODUCT_ID,
                                QUANTITY, QUANTITY_HIGH, QUANTITY_LOW,
                                RESTOCK_LEVEL)
-from service.error_handlers import bad_request, not_found
+from service.error_handlers import (bad_request, mediatype_not_supported,
+                                    not_found)
 from service.models import Condition, Inventory
 
 from . import app  # Import Flask application
@@ -121,7 +122,7 @@ def init_db():
 
 
 ######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}
+# PATH: /inventory/{product_id}/condition/{condition}
 ######################################################################
 @api.route('/inventory/<int:product_id>/condition/<string:condition>')
 @api.param('product_id, condition', 'The Inventory identifiers')
@@ -142,17 +143,17 @@ class InventoryResource(Resource):
         """
         Retrieve a single Inventory
 
-        This endpoint will return an Inventory based on it's product_id and condition
+        This endpoint will return an Inventory based on product_id and condition
         """
-        app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
-            product_id, condition))
+        app.logger.info("Request to get inventory with key ({}, {})"
+                        .format(product_id, condition))
         inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
             product_id, condition)
         if not inventory:
             api.abort(status.HTTP_404_NOT_FOUND,
                       "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
-        app.logger.info("Return inventory with product_id {} and condition {}".format(
-            product_id, condition))
+        app.logger.info("Inventory ({}, {}) returned."
+                        .format(product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
 
     # ------------------------------------------------------------------
@@ -190,10 +191,72 @@ class InventoryResource(Resource):
         else:
             inventory.quantity = api.payload[QUANTITY]
         inventory.update()
-        app.logger.info("Inventory ({}, {}) updated.".format(
-            product_id, condition))
+        app.logger.info("Inventory ({}, {}) updated."
+                        .format(product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
 
+    # ------------------------------------------------------------------
+    # DELETE AN INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('delete_inventory')
+    @api.response(status.HTTP_204_NO_CONTENT, 'Inventory deleted')
+    def delete(self, product_id: int, condition: str):
+        """
+        Delete an Inventory
+
+        This endpoint will delete an Inventory based on product_id and condition
+        """
+        app.logger.info("Request to delete inventory with key ({}, {})"
+                        .format(product_id, condition))
+        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
+            product_id, condition)
+        if inventory:
+            inventory.delete()
+        app.logger.info("Inventory ({}, {}) deleted."
+                        .format(product_id, condition))
+        return '', status.HTTP_204_NO_CONTENT
+
+
+######################################################################
+#  PATH: /inventory
+######################################################################
+@api.route('/inventory', strict_slashes=False)
+class InventoryCollection(Resource):
+    """ Handles all interactions with collections of Pets
+    POST    /inventory - Add a new Inventory
+    GET     /inventory - Return a list of the Inventory
+    """
+
+    # ------------------------------------------------------------------
+    # ADD A NEW INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('get_inventory')
+    @api.response(status.HTTP_404_NOT_FOUND, 'Inventory not found')
+    @api.response(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, 'Unsuppoted media requests')
+    @api.response(status.HTTP_400_BAD_REQUEST, 'The posted Inventory data was not valid')
+    @api.expect(inventory_model)
+    @api.marshal_with(inventory_model, code=201)
+    # TODO Add token required check
+    def post(self):
+        """
+        Create an Inventory
+
+        This endpoint will create a Inventory based the data in the body that is posted
+        """
+        app.logger.info('Request to Create an Inventory')
+        check_content_type("application/json")
+        inventory = Inventory()
+        app.logger.debug(f"Payload = {api.payload}")
+        inventory.deserialize(api.payload)
+        # Prevent create invenotory with same primary key
+        if Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            return bad_request("Product_id and condition already exist.")
+        inventory.create()
+        app.logger.info("Inventory ({}, {}) created."
+                        .format(inventory.product_id, inventory.condition))
+        location_url = api.url_for(InventoryResource, product_id=inventory.product_id,
+                                   condition=inventory.condition.name, _external=True)
+        return inventory.serialize(), status.HTTP_201_CREATED, {'Location': location_url}
 
 ######################################################################
 # GET: LIST ALL INVENTORY
