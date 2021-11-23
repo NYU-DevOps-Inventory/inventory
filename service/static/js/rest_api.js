@@ -90,14 +90,10 @@ $(function () {
     var condition = $('#inventory_condition').val();
     var restock_level = $('#inventory_restock_level').val();
     var quantity = $('#inventory_quantity').val();
-    var added_amount = $('#inventory_added_amount').val();
 
     // Convert input type
     if (!isNaN(quantity)) {
       quantity = parseInt(quantity);
-    }
-    if (!isNaN(added_amount)) {
-      added_amount = parseInt(added_amount);
     }
     if (!isNaN(restock_level)) {
       restock_level = parseInt(restock_level);
@@ -105,16 +101,15 @@ $(function () {
 
     var data = {
       quantity: quantity,
-      restock_level: restock_level,
-      added_amount: added_amount
+      restock_level: restock_level
     };
 
     var ajax = $.ajax({
       type: 'PUT',
-      url: '/inventory/' + product_id + '/condition/' + condition,
+      url: '/inventory/' + product_id + '/condition/' + condition + '?added_amount=True',
       contentType: 'application/json',
       data: JSON.stringify(data),
-    });
+    }); // TODO added_amount's value
 
     ajax.done(function (res) {
       update_form_data(res);

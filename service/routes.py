@@ -181,8 +181,6 @@ class InventoryResource(Resource):
         params: Dict[str, Union[int, str]] = request.args.to_dict()
         if ADDED_AMOUNT in params:
             added_amount: str = params[ADDED_AMOUNT]
-            if added_amount is None:
-                return bad_request("Added amount check box is none.")
         else:
             added_amount = "False"
         # To conform with expect
