@@ -23,44 +23,48 @@ For information on Waiting until elements are present in the HTML see:
     https://selenium-python.readthedocs.io/waits.html
 """
 import json
+import logging
 
 import requests
 from behave import given
 from compare import expect
 
+from service.constants import (API_URL, AVAILABLE, CONDITION, CONTENT_TYPE,
+                               PRODUCT_ID, QUANTITY, RESTOCK_LEVEL)
+
 
 @given('the following inventory')
 def step_impl(context):
     """ Delete all Inventory and load new ones """
-    headers = {"Content-Type": "application/json"}
+    BASE_URL: str = context.base_url + API_URL
+    headers = {"Content-Type": CONTENT_TYPE}
     # list all of the inventory and delete them one by one
-    context.resp = requests.get(
-        context.base_url + "/inventory", headers=headers)
+    context.resp = requests.get(BASE_URL)
     expect(context.resp.status_code).to_equal(200)
 
     for inventory in context.resp.json():
         context.resp = requests.delete(
-            "{0}/inventory/{1}/condition/{2}".format(
-                context.base_url,
-                inventory["product_id"],
-                inventory["condition"]),
-            headers=headers)
+            "{0}/{1}/condition/{2}".format(
+                BASE_URL,
+                inventory[PRODUCT_ID],
+                inventory[CONDITION])
+        )
         expect(context.resp.status_code).to_equal(204)
 
     # load the database with new inventory
-    create_url = context.base_url + '/inventory'
     for row in context.table:
         try:
-            restock_level = int(row["restock_level"])
+            restock_level = int(row[RESTOCK_LEVEL])
         except:
             restock_level = None
         data = {
-            "product_id": int(row["product_id"]),
-            "condition": row["condition"],
-            "quantity": int(row["quantity"]),
-            "restock_level": restock_level,
-            "available": row["available"] in ["True", "true", "1"]
+            PRODUCT_ID: int(row[PRODUCT_ID]),
+            CONDITION: row[CONDITION],
+            QUANTITY: int(row[QUANTITY]),
+            RESTOCK_LEVEL: restock_level,
+            AVAILABLE: row[AVAILABLE] == "True"
         }
+        logging.critical(data)
         payload = json.dumps(data)
-        context.resp = requests.post(create_url, data=payload, headers=headers)
+        context.resp = requests.post(BASE_URL, data=payload, headers=headers)
         expect(context.resp.status_code).to_equal(201)

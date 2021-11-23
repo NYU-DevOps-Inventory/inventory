@@ -66,7 +66,7 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'POST',
-      url: '/inventory',
+      url: '/api/inventory',
       contentType: 'application/json',
       data: JSON.stringify(data),
     });
@@ -106,7 +106,7 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'PUT',
-      url: '/inventory/' + product_id + '/condition/' + condition + '?added_amount=True',
+      url: '/api/inventory/' + product_id + '/condition/' + condition + '?added_amount=True',
       contentType: 'application/json',
       data: JSON.stringify(data),
     }); // TODO added_amount's value
@@ -131,7 +131,7 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'GET',
-      url: '/inventory/' + product_id + '/condition/' + condition,
+      url: '/api/inventory/' + product_id + '/condition/' + condition,
       contentType: 'application/json',
       data: '',
     });
@@ -158,7 +158,7 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'DELETE',
-      url: '/inventory/' + product_id + '/condition/' + condition,
+      url: '/api/inventory/' + product_id + '/condition/' + condition,
       contentType: 'application/json',
       data: '',
     });
@@ -183,7 +183,7 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'PUT',
-      url: '/inventory/' + product_id + '/condition/' + condition + '/activate',
+      url: '/api/inventory/' + product_id + '/condition/' + condition + '/activate',
       contentType: 'application/json',
       data: '',
     });
@@ -211,7 +211,7 @@ $(function () {
     var ajax = $.ajax({
       type: 'PUT',
       url:
-        '/inventory/' + product_id + '/condition/' + condition + '/deactivate',
+        '/api/inventory/' + product_id + '/condition/' + condition + '/deactivate',
       contentType: 'application/json',
       data: '',
     });
@@ -300,7 +300,7 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'GET',
-      url: '/inventory?' + queryString,
+      url: '/api/inventory?' + queryString,
       contentType: 'application/json',
       data: '',
     });
