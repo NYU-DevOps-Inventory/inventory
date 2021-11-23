@@ -243,7 +243,6 @@ $(function () {
 
   $('#clear-btn').click(function () {
     $('#inventory_product_id').val('');
-    $('#inventory_condition').val('');
     clear_form_data();
   });
 
