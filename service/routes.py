@@ -18,21 +18,21 @@ Inventory Store Service
 Paths:
 ------
 GET /inventory
-    - Return a list all of the Inventory
-GET /inventory/{int:product_id}/condition/{string:condition}
+    - Return a list of all the Inventory
+GET /inventory/<int:product_id>/condition/<string:condition>
     - Return the Inventory with the given product_id and condition
 
 POST /inventory
     - Create a new Inventory record in the database
 
-PUT /inventory/{int:product_id}/condition/{string:condition}
+PUT /inventory/<int:product_id>/condition/<string:condition>
     - Update the Inventory with the given product_id and condition
-PUT /inventory/{int:product_id}/condition/{string:condition}/activate
+PUT /inventory/<int:product_id>/condition/<string:condition>/activate
     - Activate the Inventory with the given product_id and condition
-PUT /inventory/{int:product_id}/condition/{string:condition}/deactivate
+PUT /inventory/<int:product_id>/condition/<string:condition>/deactivate
     - Deactivate the Inventory with the given product_id and condition
 
-DELETE /inventory/{int:product_id}/condition/{string:condition}
+DELETE /inventory/<int:product_id>/condition/<string:condition>
     - Delete the Inventory with the given product_id and condition
 """
 
@@ -108,16 +108,57 @@ inventory_args.add_argument(QUANTITY, type=int, required=False,
 inventory_args.add_argument(AVAILABLE, type=inputs.boolean, required=False,
                             help='List Inventory by Availability')
 
+
 ################################################################################
 #  U T I L I T Y   F U N C T I O N S
 ################################################################################
-
-
 @app.before_first_request
 def init_db():
     """ Initialize the SQLAlchemy app """
     global app
     Inventory.init_db(app)
+
+
+######################################################################
+# PATH: /inventory
+######################################################################
+@api.route('/inventory', strict_slashes=False)
+class InventoryCollection(Resource):
+    """ Handles all interactions with collections of Pets
+    POST    /inventory - Add a new Inventory
+    GET     /inventory - Return a list of the Inventory
+    """
+
+    # ------------------------------------------------------------------
+    # ADD A NEW INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('get_inventory')
+    @api.response(status.HTTP_404_NOT_FOUND, 'Inventory not found')
+    @api.response(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, 'Unsuppoted media requests')
+    @api.response(status.HTTP_400_BAD_REQUEST, 'The posted Inventory data was not valid')
+    @api.expect(inventory_model)
+    @api.marshal_with(inventory_model, code=201)
+    # TODO Add token required check
+    def post(self):
+        """
+        Create an Inventory
+
+        This endpoint will create a Inventory based the data in the body that is posted
+        """
+        app.logger.info('Request to Create an Inventory')
+        check_content_type("application/json")
+        inventory = Inventory()
+        app.logger.debug(f"Payload = {api.payload}")
+        inventory.deserialize(api.payload)
+        # Prevent create invenotory with same primary key
+        if Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
+            return bad_request("Product_id and condition already exist.")
+        inventory.create()
+        app.logger.info("Inventory ({}, {}) created."
+                        .format(inventory.product_id, inventory.condition))
+        location_url = api.url_for(InventoryResource, product_id=inventory.product_id,
+                                   condition=inventory.condition.name, _external=True)
+        return inventory.serialize(), status.HTTP_201_CREATED, {'Location': location_url}
 
 
 ######################################################################
@@ -210,51 +251,9 @@ class InventoryResource(Resource):
         return '', status.HTTP_204_NO_CONTENT
 
 
-######################################################################
-#  PATH: /inventory
-######################################################################
-@api.route('/inventory', strict_slashes=False)
-class InventoryCollection(Resource):
-    """ Handles all interactions with collections of Pets
-    POST    /inventory - Add a new Inventory
-    GET     /inventory - Return a list of the Inventory
-    """
-
-    # ------------------------------------------------------------------
-    # ADD A NEW INVENTORY
-    # ------------------------------------------------------------------
-    @api.doc('get_inventory')
-    @api.response(status.HTTP_404_NOT_FOUND, 'Inventory not found')
-    @api.response(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, 'Unsuppoted media requests')
-    @api.response(status.HTTP_400_BAD_REQUEST, 'The posted Inventory data was not valid')
-    @api.expect(inventory_model)
-    @api.marshal_with(inventory_model, code=201)
-    # TODO Add token required check
-    def post(self):
-        """
-        Create an Inventory
-
-        This endpoint will create a Inventory based the data in the body that is posted
-        """
-        app.logger.info('Request to Create an Inventory')
-        check_content_type("application/json")
-        inventory = Inventory()
-        app.logger.debug(f"Payload = {api.payload}")
-        inventory.deserialize(api.payload)
-        # Prevent create invenotory with same primary key
-        if Inventory.find_by_product_id_condition(inventory.product_id, inventory.condition):
-            return bad_request("Product_id and condition already exist.")
-        inventory.create()
-        app.logger.info("Inventory ({}, {}) created."
-                        .format(inventory.product_id, inventory.condition))
-        location_url = api.url_for(InventoryResource, product_id=inventory.product_id,
-                                   condition=inventory.condition.name, _external=True)
-        return inventory.serialize(), status.HTTP_201_CREATED, {'Location': location_url}
-
-
-######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}/activate
-######################################################################
+################################################################################
+# PATH: /inventory/{product_id}/condition/{condition}/activate
+################################################################################
 @api.route('/inventory/<int:product_id>/condition/<string:condition>/activate')
 @api.param('product_id, condition', 'The Inventory identifiers')
 class ActivateResource(Resource):
@@ -285,7 +284,7 @@ class ActivateResource(Resource):
 
 
 ######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}/deactivate
+# PATH: /inventory/{product_id}/condition/{condition}/deactivate
 ######################################################################
 @api.route('/inventory/<int:product_id>/condition/<string:condition>/deactivate')
 @api.param('product_id, condition', 'The Inventory identifiers')
