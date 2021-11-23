@@ -211,7 +211,8 @@ class InventoryCollection(Resource):
     # TODO Add token required check
     def post(self):
         """
-        Creates an Inventory
+        Create an Inventory
+
         This endpoint will create a Inventory based the data in the body that is posted
         """
         app.logger.info('Request to Create an Inventory')
