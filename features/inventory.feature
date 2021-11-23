@@ -86,3 +86,12 @@ Scenario: Search all Inventory
     And I should see "100" in the "Restock Level" field
     And I should see "True" in the "Available" dropdown
 
+Scenario: Delete an Inventory
+    When I visit the "Home Page"
+    And I set the "Product ID" to "1"
+    And I select "NEW" in the "Condition" dropdown
+    And I press the "Delete" button
+    Then I should see the message "Inventory has been Deleted!"
+    When I press the "Retrieve" button
+    Then I should see the message "404 Not Found: Inventory with product_id '1' and condition 'NEW' was not found."
+    And I should not see "Inventory has been Deleted!"
