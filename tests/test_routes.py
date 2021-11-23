@@ -152,6 +152,64 @@ class TestInventoryServer(unittest.TestCase):
             new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
         )
 
+    def test_create_inventory_by_api_base_url(self):
+        """ Create a new inventory by API_BASE_URL """
+        test_inventory = InventoryFactory()
+        resp = self.app.post(
+            API_BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # Make sure location header is set
+        location = resp.headers.get("Location", None)
+        self.assertIsNotNone(location)
+        # Check the data is correct
+        new_inventory = resp.get_json()
+        self.assertEqual(
+            new_inventory["product_id"], test_inventory.product_id, "Product_id do not match")
+        self.assertEqual(
+            new_inventory["condition"], test_inventory.condition.name, "Condition do not match")
+        self.assertEqual(
+            new_inventory["quantity"], test_inventory.quantity, "Quantity does not match"
+        )
+        self.assertEqual(
+            new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
+        )
+        # Check that the location header was correct
+        resp = self.app.get(
+            "{0}/{1}/condition/{2}".format(
+                API_BASE_URL,
+                test_inventory.product_id,
+                test_inventory.condition.name),
+            content_type="application/json")
+        data = resp.get_json()
+        logging.debug('data = %s', data)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        new_inventory = resp.get_json()
+        self.assertEqual(
+            new_inventory["product_id"], test_inventory.product_id, "Product_id do not match")
+        self.assertEqual(
+            new_inventory["condition"], test_inventory.condition.name, "Condition do not match"
+        )
+        self.assertEqual(
+            new_inventory["quantity"], test_inventory.quantity, "Quantity does not match"
+        )
+        self.assertEqual(
+            new_inventory["restock_level"], test_inventory.restock_level, "Restock_level does not match"
+        )
+
+    def test_create_inventory_already_exist_by_api_base_url(self):
+        """ Create an inventory already exists by API_BASE_URL """
+        test_inventory = InventoryFactory()
+        resp = self.app.post(
+            API_BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # Post again
+        resp = self.app.post(
+            API_BASE_URL, json=test_inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_inventory_already_exist(self):
         """ Create an inventory already exists """
         test_inventory = InventoryFactory()
@@ -165,10 +223,29 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_create_inventory_no_data_by_api_base_url(self):
+        """ Create an inventory with missing data by API_BASE_URL """
+        resp = self.app.post(
+            API_BASE_URL, json={}, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_inventory_no_data(self):
         """ Create an inventory with missing data """
         resp = self.app.post(
             BASE_URL, json={}, content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_inventory_bad_condition_by_api_base_url(self):
+        """ Create a Inventory with bad condition data by API_BASE_URL """
+        inventory = InventoryFactory()
+        logging.debug(inventory)
+        # change condition to a bad string
+        test_inventory = inventory.serialize()
+        test_inventory["condition"] = "new"    # wrong case
+        resp = self.app.post(
+            API_BASE_URL, json=test_inventory, content_type="application/json"
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
