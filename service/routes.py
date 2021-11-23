@@ -41,6 +41,7 @@ from typing import Dict, Optional, Union
 
 from flask import abort, jsonify, make_response, request, url_for
 from flask_restx import Api, Resource, fields, inputs, reqparse
+from sqlalchemy.orm.query import Query
 # For this example we'll use SQLAlchemy, a popular ORM that supports a
 # variety of backends including SQLite, MySQL, and PostgreSQL
 from werkzeug.exceptions import NotFound
@@ -218,12 +219,18 @@ class InventoryResource(Resource):
             api.abort(status.HTTP_404_NOT_FOUND,
                       "Inventory with ({}, {})".format(product_id, condition))
         app.logger.debug(f"Payload = {api.payload}")
+        # Get the query parameters
+        params: Dict[str, Union[int, str]] = request.args.to_dict()
+        if ADDED_AMOUNT in params:
+            added_amount: str = params[ADDED_AMOUNT]
+        else:
+            added_amount = "False"
         # To conform with expect
-        inventory_dict = inventory.serialize()
-        for key in inventory_dict.keys():
-            if key in api.payload:
-                inventory_dict[key] = api.payload[key]
-        inventory.deserialize(inventory_dict)
+        inventory.restock_level = api.payload[RESTOCK_LEVEL]
+        if added_amount == "True":
+            inventory.quantity += api.payload[QUANTITY]
+        else:
+            inventory.quantity = api.payload[QUANTITY]
         inventory.update()
         app.logger.info("Inventory ({}, {}) updated."
                         .format(product_id, condition))
