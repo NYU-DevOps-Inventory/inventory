@@ -121,7 +121,7 @@ def init_db():
 
 
 ######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}
+# PATH: /inventory/{product_id}/condition/{condition}
 ######################################################################
 @api.route('/inventory/<int:product_id>/condition/<string:condition>')
 @api.param('product_id, condition', 'The Inventory identifiers')
@@ -142,17 +142,17 @@ class InventoryResource(Resource):
         """
         Retrieve a single Inventory
 
-        This endpoint will return an Inventory based on it's product_id and condition
+        This endpoint will return an Inventory based on product_id and condition
         """
-        app.logger.info("A GET request for inventories with product_id {} and condition {}".format(
-            product_id, condition))
+        app.logger.info("Request to get inventory with key ({}, {})"
+                        .format(product_id, condition))
         inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
             product_id, condition)
         if not inventory:
             api.abort(status.HTTP_404_NOT_FOUND,
                       "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
-        app.logger.info("Return inventory with product_id {} and condition {}".format(
-            product_id, condition))
+        app.logger.info("Inventory ({}, {}) returned."
+                        .format(product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
 
     # ------------------------------------------------------------------
@@ -184,75 +184,31 @@ class InventoryResource(Resource):
                 inventory_dict[key] = api.payload[key]
         inventory.deserialize(inventory_dict)
         inventory.update()
-        app.logger.info("Inventory ({}, {}) updated.".format(
-            product_id, condition))
+        app.logger.info("Inventory ({}, {}) updated."
+                        .format(product_id, condition))
         return inventory.serialize(), status.HTTP_200_OK
 
-######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}/activate
-######################################################################
-
-
-@api.route('/inventory/<int:product_id>/condition/<string:condition>/activate')
-@api.param('product_id, condition', 'The Inventory identifiers')
-class ActivateResource(Resource):
-    """ Activate actions on an Inventory """
-    @api.doc('activate_inventory')
-    @api.response(404, 'Inventory not found')
-    @api.response(409, 'The Inventory is already activated')
-    def put(self, product_id: int, condition: str):
+    # ------------------------------------------------------------------
+    # DELETE AN INVENTORY
+    # ------------------------------------------------------------------
+    @api.doc('delete_inventory')
+    @api.response(status.HTTP_204_NO_CONTENT, 'Inventory deleted')
+    def delete(self, product_id: int, condition: str):
         """
-        Activate an Inventory
+        Delete an Inventory
 
-        This endpoint will activate an Inventory
+        This endpoint will delete an Inventory based on product_id and condition
         """
-        app.logger.info('Request to Activate an Inventory')
+        app.logger.info("Request to delete inventory with key ({}, {})"
+                        .format(product_id, condition))
         inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
             product_id, condition)
-        if not inventory:
-            api.abort(status.HTTP_404_NOT_FOUND,
-                      "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
-        if inventory.available:
-            api.abort(status.HTTP_409_CONFLICT,
-                      "Inventory ({}, {}) is already available.".format(product_id, condition))
-        inventory.available = True
-        inventory.update()
-        app.logger.info('Inventory ({}, {}) is activated!'.format(
-            product_id, condition))
-        return inventory.serialize(), status.HTTP_200_OK
+        if inventory:
+            inventory.delete()
+        app.logger.info("Inventory ({}, {}) deleted."
+                        .format(product_id, condition))
+        return '', status.HTTP_204_NO_CONTENT
 
-######################################################################
-#  PATH: /inventory/{product_id}/condition/{condition}/deactivate
-######################################################################
-
-
-@api.route('/inventory/<int:product_id>/condition/<string:condition>/deactivate')
-@api.param('product_id, condition', 'The Inventory identifiers')
-class DeactivateResource(Resource):
-    """ Deactivate actions on an Inventory """
-    @api.doc('deactivate_inventory')
-    @api.response(404, 'Inventory not found')
-    @api.response(409, 'The Inventory is already deactivated')
-    def put(self, product_id: int, condition: str):
-        """
-        Deactivate an Inventory
-
-        This endpoint will deactivate an Inventory
-        """
-        app.logger.info('Request to Deactivate an Inventory')
-        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
-            product_id, condition)
-        if not inventory:
-            api.abort(status.HTTP_404_NOT_FOUND,
-                      "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
-        if not inventory.available:
-            api.abort(status.HTTP_409_CONFLICT,
-                      "Inventory ({}, {}) is already unavailable.".format(product_id, condition))
-        inventory.available = False
-        inventory.update()
-        app.logger.info('Inventory ({}, {}) is deactivated!'.format(
-            product_id, condition))
-        return inventory.serialize(), status.HTTP_200_OK
 
 ######################################################################
 #  PATH: /inventory
@@ -294,6 +250,70 @@ class InventoryCollection(Resource):
         location_url = api.url_for(InventoryResource, product_id=inventory.product_id,
                                    condition=inventory.condition.name, _external=True)
         return inventory.serialize(), status.HTTP_201_CREATED, {'Location': location_url}
+
+
+######################################################################
+#  PATH: /inventory/{product_id}/condition/{condition}/activate
+######################################################################
+@api.route('/inventory/<int:product_id>/condition/<string:condition>/activate')
+@api.param('product_id, condition', 'The Inventory identifiers')
+class ActivateResource(Resource):
+    """ Activate actions on an Inventory """
+    @api.doc('activate_inventory')
+    @api.response(404, 'Inventory not found')
+    @api.response(409, 'The Inventory is already activated')
+    def put(self, product_id: int, condition: str):
+        """
+        Activate an Inventory
+
+        This endpoint will activate an Inventory
+        """
+        app.logger.info('Request to Activate an Inventory')
+        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
+            product_id, condition)
+        if not inventory:
+            api.abort(status.HTTP_404_NOT_FOUND,
+                      "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
+        if inventory.available:
+            api.abort(status.HTTP_409_CONFLICT,
+                      "Inventory ({}, {}) is already available.".format(product_id, condition))
+        inventory.available = True
+        inventory.update()
+        app.logger.info('Inventory ({}, {}) is activated!'.format(
+            product_id, condition))
+        return inventory.serialize(), status.HTTP_200_OK
+
+
+######################################################################
+#  PATH: /inventory/{product_id}/condition/{condition}/deactivate
+######################################################################
+@api.route('/inventory/<int:product_id>/condition/<string:condition>/deactivate')
+@api.param('product_id, condition', 'The Inventory identifiers')
+class DeactivateResource(Resource):
+    """ Deactivate actions on an Inventory """
+    @api.doc('deactivate_inventory')
+    @api.response(404, 'Inventory not found')
+    @api.response(409, 'The Inventory is already deactivated')
+    def put(self, product_id: int, condition: str):
+        """
+        Deactivate an Inventory
+
+        This endpoint will deactivate an Inventory
+        """
+        app.logger.info('Request to Deactivate an Inventory')
+        inventory: Optional[Inventory] = Inventory.find_by_product_id_condition(
+            product_id, condition)
+        if not inventory:
+            api.abort(status.HTTP_404_NOT_FOUND,
+                      "Inventory ({}, {}) NOT FOUND".format(product_id, condition))
+        if not inventory.available:
+            api.abort(status.HTTP_409_CONFLICT,
+                      "Inventory ({}, {}) is already unavailable.".format(product_id, condition))
+        inventory.available = False
+        inventory.update()
+        app.logger.info('Inventory ({}, {}) is deactivated!'.format(
+            product_id, condition))
+        return inventory.serialize(), status.HTTP_200_OK
 
 ######################################################################
 # GET: LIST ALL INVENTORY
