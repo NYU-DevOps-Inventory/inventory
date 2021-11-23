@@ -632,6 +632,53 @@ class TestInventoryServer(unittest.TestCase):
         )
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_activate_inventory_by_api_base_url(self):
+        """Activate an existing record in Inventory by API_BASE_URL"""
+        # create an inventory with available status is false
+        inventory = InventoryFactory()
+        inventory.available = False
+        # TODO: update url
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record's available to true
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}/activate".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # check result
+        resp = self.app.get(
+            "{0}/{1}/condition/{2}".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json()['available'], True)
+
+    def test_activate_available_inventory_by_api_base_url(self):
+        """Activate an existing record that is available in Inventory by API_BASE_URL"""
+        # create an inventory with available status is true
+        inventory = InventoryFactory()
+        inventory.available = True
+        # TODO: update url
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record's available to true
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}/activate".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
+
     def test_activate_inventory(self):
         """Activate an existing record in Inventory"""
         inventory = InventoryFactory()
@@ -649,6 +696,53 @@ class TestInventoryServer(unittest.TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         updated_inventory = resp.get_json()
         self.assertEqual(updated_inventory["available"], True)
+
+    def test_deactivate_inventory_by_api_base_url(self):
+        """Deactivate an existing record in Inventory by API_BASE_URL"""
+        # create an inventory with available status is true
+        inventory = InventoryFactory()
+        inventory.available = True
+        # TODO: update url
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record's available to false
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}/deactivate".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        # check result
+        resp = self.app.get(
+            "{0}/{1}/condition/{2}".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.get_json()['available'], False)
+
+    def test_deactivate_unavailable_inventory_by_api_base_url(self):
+        """Deactivate an existing record that is unavailable in Inventory by API_BASE_URL"""
+        # create an inventory with available status is false
+        inventory = InventoryFactory()
+        inventory.available = False
+        # TODO: update url
+        resp = self.app.post(
+            BASE_URL, json=inventory.serialize(), content_type="application/json"
+        )
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+        # update the record's available to false
+        resp = self.app.put(
+            "{0}/{1}/condition/{2}/deactivate".format(
+                API_BASE_URL,
+                inventory.product_id,
+                inventory.condition.name),
+            content_type="application/json")
+        self.assertEqual(resp.status_code, status.HTTP_409_CONFLICT)
 
     def test_deactivate_inventory(self):
         """Deactivate an existing record in Inventory"""
