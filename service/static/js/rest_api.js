@@ -29,6 +29,7 @@ $(function () {
     $('#inventory_quantity').val('');
     $('#inventory_quantity_low').val('');
     $('#inventory_quantity_high').val('');
+    $('#inventory_add_amount').val('');
   }
 
   // Updates the flash message area
@@ -106,10 +107,10 @@ $(function () {
 
     var ajax = $.ajax({
       type: 'PUT',
-      url: '/api/inventory/' + product_id + '/condition/' + condition + '?added_amount=True',
+      url: '/api/inventory/' + product_id + '/condition/' + condition,
       contentType: 'application/json',
       data: JSON.stringify(data),
-    }); // TODO added_amount's value
+    });
 
     ajax.done(function (res) {
       update_form_data(res);
@@ -214,6 +215,43 @@ $(function () {
         '/api/inventory/' + product_id + '/condition/' + condition + '/deactivate',
       contentType: 'application/json',
       data: '',
+    });
+
+    ajax.done(function (res) {
+      //alert(res.toSource())
+      update_form_data(res);
+      flash_message('Success');
+    });
+
+    ajax.fail(function (res) {
+      clear_form_data();
+      flash_message(res.responseJSON.message);
+    });
+  });
+
+  // ****************************************
+  // Add amount to an Inventory
+  // ****************************************
+
+  $('#add-amount-btn').click(function () {
+    var product_id = $('#inventory_product_id').val();
+    var condition = $('#inventory_condition').val();
+    var add_amount = $('#inventory_add_amount').val();
+
+    // Convert input type
+    if (!isNaN(add_amount)) {
+      add_amount = parseInt(add_amount);
+    }
+
+    var data = {
+      quantity: add_amount
+    };
+
+    var ajax = $.ajax({
+      type: 'PUT',
+      url: '/api/inventory/' + product_id + '/condition/' + condition + '?added_amount=True',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
     });
 
     ajax.done(function (res) {

@@ -140,7 +140,6 @@ class InventoryCollection(Resource):
             return results, status.HTTP_200_OK
 
         # TODO: Avoid using list intersection for more efficency
-        # TODO: Unit test intersection function
         inventories: List[Inventory] = []
         # Actually this condition will always be true in real use cases
         if AVAILABLE in params:
@@ -287,11 +286,12 @@ class InventoryResource(Resource):
         if ADDED_AMOUNT in params:
             added_amount = params[ADDED_AMOUNT]
         # To conform with expect
-        inventory.restock_level = api.payload[RESTOCK_LEVEL]
         if added_amount == "True":
+            # We don't update restock_level
             inventory.quantity += api.payload[QUANTITY]
         else:
             inventory.quantity = api.payload[QUANTITY]
+            inventory.restock_level = api.payload[RESTOCK_LEVEL]
         inventory.validate_data()
         inventory.update()
         app.logger.info("Inventory ({}, {}) updated."
