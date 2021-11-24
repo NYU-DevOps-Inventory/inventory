@@ -347,14 +347,13 @@ class TestInventoryServer(unittest.TestCase):
         # Add amount to `quantity` and update `restock_level`
         resp = self.app.put(
             url,
-            json={QUANTITY: 1000, RESTOCK_LEVEL: 400},
+            json={QUANTITY: 1000},
             content_type=CONTENT_TYPE)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         # Check the result
         resp = self.app.get(url, content_type=CONTENT_TYPE)
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(resp.get_json()[QUANTITY], 1000 + inventory.quantity)
-        self.assertEqual(resp.get_json()[RESTOCK_LEVEL], 400)
 
     def test_update_inventory_200_ok_false_added_amount(self):
         """ Update an Inventory: HTTP_200_OK [?added_amount=False] """

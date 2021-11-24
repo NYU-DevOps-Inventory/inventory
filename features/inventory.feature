@@ -27,6 +27,22 @@ Scenario: Retrieve an Inventory
     And I should see "100" in the "Restock Level" field
     And I should see "True" in the "Available" dropdown
 
+Scenario: Add amount to an Inventory
+    When I visit the "Home Page"
+    And I set the "Product ID" to "1"
+    And I select "NEW" in the "Condition" dropdown
+    And I set the "Add amount" to "200"
+    And I press the "Add-amount" button
+    Then I should see the message "Success"
+    When I visit the "Home Page"
+    And I set the "Product ID" to "1"
+    And I select "NEW" in the "Condition" dropdown
+    And I press the "Retrieve" button
+    Then I should see the message "Success"
+    And I should see "1" in the "Product ID" field
+    And I should see "NEW" in the "Condition" dropdown
+    And I should see "500" in the "Quantity" field
+
 Scenario: Update an Inventory
     When I visit the "Home Page"
     And I set the "Product ID" to "1"
@@ -42,7 +58,7 @@ Scenario: Update an Inventory
     Then I should see the message "Success"
     And I should see "1" in the "Product ID" field
     And I should see "NEW" in the "Condition" dropdown
-    And I should see "500" in the "Quantity" field
+    And I should see "200" in the "Quantity" field
     And I should see "400" in the "Restock Level" field
     And I should see "True" in the "Available" dropdown
 
