@@ -46,10 +46,11 @@ import os
 import unittest
 from typing import List
 
+from sqlalchemy import exc
+
 from service import app
 from service.constants import POSTGRES_DATABASE_URI, QUANTITY
 from service.models import Condition, DataValidationError, Inventory, db
-from sqlalchemy import exc
 
 DATABASE_URI = os.getenv("DATABASE_URI", POSTGRES_DATABASE_URI)
 
@@ -73,7 +74,7 @@ class TestInventoryModel(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         """ This runs once after the entire test suite """
-        pass
+        db.session.close()
 
     def setUp(self):
         """ This runs before each test """

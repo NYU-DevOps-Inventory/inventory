@@ -74,7 +74,7 @@ class TestInventoryServer(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        db.session.close()
 
     def setUp(self):
         """ Runs before each test """
