@@ -37,15 +37,3 @@ class TestErrorHandlers(TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
-
-    def test_db_err(self):
-        """ DB connection error """
-        db.session.close()
-        uri_list = ["", "postgres://postgres:postgres@localhost:1234/cooldude"]
-        for uri in uri_list:
-            self.db_err(uri)
-        app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
-
-    def db_err(self, uri):
-        app.config["SQLALCHEMY_DATABASE_URI"] = uri
-        self.assertRaises(DBError, Inventory.init_db, app)
