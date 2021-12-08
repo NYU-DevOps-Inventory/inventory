@@ -3,7 +3,7 @@
 applications:
   - name: nyu-devops-inventory-dev
     path: .
-    instances: 1
+    instances: 2
     memory: 128M
     routes:
       - route: nyu-devops-inventory-dev.us-south.cf.appdomain.cloud
@@ -18,7 +18,7 @@ applications:
       FLASK_DEBUG: false
   - name: nyu-devops-inventory
     path: .
-    instances: 1
+    instances: 2
     memory: 128M
     routes:
       - route: nyu-devops-inventory.us-south.cf.appdomain.cloud
