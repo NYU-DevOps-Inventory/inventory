@@ -28,23 +28,42 @@ This project is the back-end for an eCommerce website as a RESTful microservice 
 ├── Vagrantfile
 ├── config.py
 ├── coverage.xml
+├── features
+│   ├── environment.py
+│   ├── inventory.feature
+│   └── steps
+│       ├── inventory_steps.py
+│       └── web_steps.py
 ├── manifest.yml
 ├── requirements.txt
 ├── runtime.txt
 ├── service
-│   ├── __init__.py             - package initializer
-│   ├── constants.py            - constansts of the app
-│   ├── error_handlers.py       - http error codes
-│   ├── models.py               - module with main database models
-│   ├── routes.py               - module with service routes
-│   └── status.py               - http status codes
+│   ├── __init__.py
+│   ├── constants.py
+│   ├── error_handlers.py
+│   ├── models.py
+│   ├── routes.py
+│   ├── static
+│   │   ├── css
+│   │   │   ├── blue_bootstrap.min.css
+│   │   │   ├── darkly_bootstrap.min.css
+│   │   │   ├── flatly_bootstrap.min.css
+│   │   │   └── slate_bootstrap.min.css
+│   │   ├── images
+│   │   │   └── newapp-icon.png
+│   │   ├── index.html
+│   │   └── js
+│   │       ├── jquery-3.1.1.min.js
+│   │       └── rest_api.js
+│   └── status.py
 ├── setup.cfg
 ├── tests
-│   ├── __init__.py             - package initializer
-│   ├── factories.py            - factory to fake inventory data
-│   ├── test_error_handlers.py  - test suite for error_handlers.py
-│   ├── test_models.py          - test suite for models.py
-│   └── test_routes.py          - test suite for routes.py
+│   ├── __init__.py
+│   ├── factories.py
+│   ├── test_db_errors.py
+│   ├── test_error_handlers.py
+│   ├── test_models.py
+│   └── test_routes.py
 └── unittests.xml
 ```
 
@@ -109,6 +128,20 @@ If you want to see the lines of codes not tested, run:
 $ coverage report -m
 ```
 
+### Run BDD Integration Tests
+
+After running
+
+```bash
+$ honcho start
+```
+
+Run
+
+```bash
+$ behave
+```
+
 ### Terminate the Service
 
 Before you leave, be reminded to terminate the service by running
@@ -125,6 +158,8 @@ $ vagrant destroy
 ```
 
 ## APIs
+
+The documentation API is available at: `/apidocs`
 
 Note the type of `product_id` is `integer` and the type of `condition` is `string`.
 
@@ -159,8 +194,8 @@ In `PUT`, the allowed keys in request body are:
   // Update the inventory's quantity
   "quantity": Integer,
 
-  // Increase the inventory's quantity
-  "added_amount": Integer,
+  // Determine if we add qauntity or update quantity
+  "added_amount": Boolean,
 
   // Update the inventory's restock_level (its condition must be Condition.NEW)
   "restock_level": Integer,
@@ -170,5 +205,11 @@ In `PUT`, the allowed keys in request body are:
 ## Deployment
 
 We also deploy our app by IBM Cloud Foundry.
+
+### Dev URL
+
+https://nyu-devops-inventory-dev.us-south.cf.appdomain.cloud
+
+### Production URL
 
 Link: https://nyu-devops-inventory.us-south.cf.appdomain.cloud
